@@ -17,7 +17,7 @@ import Data.Text.Lazy (unpack)
 import Data.Time.Clock (getCurrentTime)
 import Happstack.Server hiding (method)
 import Text.Blaze.Html5 (Html, (!), a, form, input, p, toHtml, label)
-import Text.Blaze.Html5.Attributes (href, type_, name, size, action, method)
+import Text.Blaze.Html5.Attributes (href, type_, name, size, action, method, value)
 import qualified Text.Blaze.Html5 as H
 
 main :: IO ()
@@ -29,6 +29,8 @@ route :: DB -> ServerPart Response
 route db = msum
   [ dirs "transaction/list" $ page_transaction_list db
   , dirs "transaction/add" $ page_transaction_add db
+  , dirs "transaction/delete" $ page_transaction_delete db
+  , dirs "transaction/show" $ page_transaction_show db
   , dir "person" $ page_person db
   , nullDir >> homePage db]
 
@@ -67,6 +69,11 @@ homePage db = do
 
     H.p $ a ! href "/transaction/list" $ "transactions"
 
+redir_to_transaction :: TransactionID -> ServerPart Response
+redir_to_transaction id =
+  tempRedirect ("/transaction/show/"++show id)
+  (toResponse ("" :: String))
+
 transaction_add_form :: Html
 transaction_add_form = do
   H.form ! method "GET" ! action "/transaction/add" $ do
@@ -87,15 +94,33 @@ page_transaction_add db = do
   time <- liftIO getCurrentTime
   let st = SimpleTransaction (Person payer) (map Person benefitors)
            (Balance sum) description time
-  liftIO $ addTransaction db st
-  ok $ template "Transaction added!" $
-    toHtml st
+  stored <- liftIO $ addTransaction db st
+  redir_to_transaction (transactionid stored)
 
 page_transaction_list :: DB -> ServerPart Response
 page_transaction_list db = do
   ts <- liftIO $ viewTransactions db
   ok $ template "Transactions" $ do
     H.ul $ forM_ ts (H.li . toHtml)
+
+transaction_delete_form :: TransactionID -> Html
+transaction_delete_form id =
+  H.form ! method "GET" ! action (H.toValue $ "/transaction/delete/"++show id) $
+  H.p $ H.button ! type_ "submit" ! name "delete" $
+  toHtml ("Delete transaction "++show id)
+
+page_transaction_show :: DB -> ServerPart Response
+page_transaction_show db = path $ \id -> do
+  ts <- liftIO $ viewTransactions db
+  let [t] = filter ((==id).transactionid) ts
+  ok $ template ("Transaction " ++ show id) $ do
+    H.p $ toHtml t
+    transaction_delete_form id
+
+page_transaction_delete :: DB -> ServerPart Response
+page_transaction_delete db = path $ \id -> do
+  liftIO $ deleteTransaction db id
+  redir_to_transaction id
 
 page_person db = path $ \p -> do
   let person = Person p

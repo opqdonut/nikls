@@ -11,42 +11,68 @@ import Data.SafeCopy
 import Control.Monad.State
 import Control.Monad.Reader
 
-data Database = Database { transactions :: [SimpleTransaction] }
+type TransactionID = Integer
+
+data StoredTransaction = StoredTransaction { transactionid :: TransactionID
+                                           , deleted :: Bool
+                                           , transaction :: SimpleTransaction }
+                         deriving Typeable
+
+data Database = Database { transactions :: [StoredTransaction],
+                           nextId :: TransactionID }
                 deriving Typeable
 
 $(deriveSafeCopy 0 'base ''Person)
 $(deriveSafeCopy 0 'base ''Balance)
 $(deriveSafeCopy 0 'base ''SimpleTransaction)
+$(deriveSafeCopy 0 'base ''StoredTransaction)
 $(deriveSafeCopy 0 'base ''Database)
 
-addTransaction_ :: SimpleTransaction -> Update Database ()
+addTransaction_ :: SimpleTransaction -> Update Database StoredTransaction
 addTransaction_ st =
-  do Database ts <- get
-     put $ Database (st:ts)
+  do Database ts id <- get
+     let stored = StoredTransaction id False st
+     put $ Database (stored:ts) (id+1)
+     return stored
 
-viewTransactions_ :: Query Database [SimpleTransaction]
+deleteTransaction_ :: TransactionID -> Update Database ()
+deleteTransaction_ id =
+  do Database ts id <- get
+     put $ Database (map del ts) id
+  where del s@(StoredTransaction id' _ t)
+          | id == id' = StoredTransaction id' True t
+          | otherwise = s
+
+viewTransactions_ :: Query Database [StoredTransaction]
 viewTransactions_ = asks transactions
 
-$(makeAcidic ''Database ['addTransaction_, 'viewTransactions_])
+$(makeAcidic ''Database ['addTransaction_, 'viewTransactions_, 'deleteTransaction_])
 
 type DB = AcidState Database
 
 openDatabase :: IO DB
-openDatabase = openLocalState (Database [])
+openDatabase = openLocalState (Database [] 1)
 
 closeDatabase :: DB -> IO ()
 closeDatabase = createCheckpointAndClose
 
-addTransaction :: DB -> SimpleTransaction -> IO ()
+addTransaction :: DB -> SimpleTransaction -> IO StoredTransaction
 addTransaction db st = update db (AddTransaction_ st)
 
-viewTransactions :: DB -> IO [SimpleTransaction]
+deleteTransaction :: DB -> TransactionID -> IO ()
+deleteTransaction db id = update db (DeleteTransaction_ id)
+
+viewTransactions :: DB -> IO [StoredTransaction]
 viewTransactions db = query db ViewTransactions_
 
-viewDebtGraph :: DB -> IO DebtGraph
-viewDebtGraph db = fmap (applySimpleTransactions emptyDebtGraph) $
-                   viewTransactions db
+viewValidTransactions :: DB -> IO [StoredTransaction]
+viewValidTransactions db = fmap (filter (not.deleted)) $ viewTransactions db
 
-viewTransactionsFor :: DB -> Person -> IO [SimpleTransaction]
-viewTransactionsFor db p = fmap (filter (isInTransaction p)) $
+viewDebtGraph :: DB -> IO DebtGraph
+viewDebtGraph db =
+  fmap (applySimpleTransactions emptyDebtGraph . map transaction)
+  $ viewValidTransactions db
+
+viewTransactionsFor :: DB -> Person -> IO [StoredTransaction]
+viewTransactionsFor db p = fmap (filter (isInTransaction p . transaction)) $
                            viewTransactions db

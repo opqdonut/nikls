@@ -1,6 +1,7 @@
 module View where
 
 import Domain
+import Store
 
 import Control.Monad (forM_)
 import Text.Blaze (ToMarkup(..))
@@ -9,8 +10,8 @@ import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5.Attributes (class_, href)
 
 instance ToMarkup Person where
-  toMarkup (Person s) = H.span ! class_ (toValue "person") $
-                        H.a ! href (toValue $ "/person/"++s) $
+  toMarkup (Person s) = H.a ! class_ (toValue "person")
+                        ! href (toValue $ "/person/"++s) $
                         toHtml s
 
 instance ToMarkup Balance where
@@ -25,9 +26,15 @@ instance ToMarkup SimpleTransaction where
       toHtml " Benefitors: "
       forM_ benefitors (\b -> H.span ! class_ (toValue "benefitor") $
                               toHtml b >> toHtml ", ")
-      toHtml " Sum: "
-      toHtml sum
-      toHtml " "
-      toHtml (show descr)
-      toHtml " @ "
-      toHtml (show time)
+      toHtml " Sum: " >> toHtml sum
+      toHtml " " >> toHtml (show descr)
+      toHtml " @ " >> toHtml (show time)
+
+instance ToMarkup StoredTransaction where
+  toMarkup (StoredTransaction tid del st) =
+    H.span ! class_ (toValue "storedtransaction") $ do
+      (if del then H.del else id) $ do
+        H.a ! class_ (toValue "transactionid")
+          ! href (toValue $ "/transaction/show/"++show tid) $
+          toHtml tid
+        toHtml " " >> toHtml st
