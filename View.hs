@@ -10,7 +10,7 @@ import Text.Blaze.Html5.Attributes (class_, href)
 
 instance ToMarkup Person where
   toMarkup (Person s) = H.span ! class_ (toValue "person") $
-                        H.a ! href (toValue $ "/persons/"++s) $
+                        H.a ! href (toValue $ "/person/"++s) $
                         toHtml s
 
 instance ToMarkup Balance where

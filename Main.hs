@@ -11,6 +11,7 @@ import Control.Exception
 import Control.Monad (msum, forM_)
 import Control.Monad.Trans (liftIO)
 import qualified Data.Map.Strict as M
+import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.Text.Lazy (unpack)
 import Data.Time.Clock (getCurrentTime)
@@ -28,9 +29,10 @@ route :: DB -> ServerPart Response
 route db = msum
   [ dirs "transaction/list" $ page_transaction_list db
   , dirs "transaction/add" $ page_transaction_add db
-  , homePage db]
+  , dir "person" $ page_person db
+  , nullDir >> homePage db]
 
-template :: Text -> Html -> Response
+template :: String -> Html -> Response
 template title body = toResponse $
   H.html $ do
     H.head $ do
@@ -50,12 +52,12 @@ homePage db = do
       toHtml p
       toHtml (" : " :: String)
       toHtml (M.findWithDefault (Balance 0) p bal)
-      H.ul $ H.li $ forM_ (M.assocs $ M.findWithDefault M.empty p g) $ \(p',balance) -> do
+      H.ul $ H.li $ forM_ (M.assocs $ fromJust $ M.lookup p g) $ \(p',balance) -> do
         toHtml p'
         toHtml (" : " :: String)
         toHtml balance
         toHtml (", " :: String)
-      H.ul $ H.li $ forM_ (M.assocs $ M.findWithDefault M.empty p pro) $ \(p',balance) -> do
+      H.ul $ H.li $ forM_ (M.assocs $ fromJust $ M.lookup p pro) $ \(p',balance) -> do
         toHtml p'
         toHtml (" : " :: String)
         toHtml balance
@@ -94,3 +96,27 @@ page_transaction_list db = do
   ts <- liftIO $ viewTransactions db
   ok $ template "Transactions" $ do
     H.ul $ forM_ ts (H.li . toHtml)
+
+page_person db = path $ \p -> do
+  let person = Person p
+  ts <- liftIO $ viewTransactionsFor db person
+  g <- liftIO $ viewDebtGraph db
+  let bal = unBalances $ balances g
+  let opt = propagateDebts g
+  ok $ template ("Person " ++ p) $ do
+    H.p $ do "Balance: "
+             toHtml (fromJust $ M.lookup person bal)
+    H.p $ do "Debts: "
+             H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person g) $
+               \(p',balance) -> H.li $ do
+                 toHtml p'
+                 " : "
+                 toHtml balance
+    H.p $ do "Propagated debts: "
+             H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person opt) $
+               \(p',balance) -> H.li $ do
+                 toHtml p'
+                 " : "
+                 toHtml balance
+    H.p $ do "Transactions: "
+             H.ul $ forM_ ts (H.li . toHtml)

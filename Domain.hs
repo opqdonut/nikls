@@ -139,6 +139,11 @@ data SimpleTransaction = SimpleTransaction { stPayer :: Person,
                                              stDescription :: String,
                                              stTime :: UTCTime }
                          deriving (Show, Read, Typeable)
+
+isInTransaction :: Person -> SimpleTransaction -> Bool
+isInTransaction p (SimpleTransaction payer benefitors _ _ _) =
+  p == payer || p `elem` benefitors
+
 (///) :: Integral a => a -> a -> [a]
 a /// b = zipWith (-) (tail steps) steps
   where steps = [truncate (a * x % b) | x<-[0..b]]

@@ -46,3 +46,7 @@ viewTransactions db = query db ViewTransactions_
 viewDebtGraph :: DB -> IO DebtGraph
 viewDebtGraph db = fmap (applySimpleTransactions emptyDebtGraph) $
                    viewTransactions db
+
+viewTransactionsFor :: DB -> Person -> IO [SimpleTransaction]
+viewTransactionsFor db p = fmap (filter (isInTransaction p)) $
+                           viewTransactions db
