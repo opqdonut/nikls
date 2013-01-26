@@ -1,9 +1,14 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
+
 module Domain where
 
+import Control.Monad (msum, forM_)
+import Data.List
 import qualified Data.Map.Strict as M
 import Data.Monoid
 import Data.Ratio
 import Data.Time
+import Data.Graph as G
 
 type Map = M.Map
 
@@ -20,6 +25,10 @@ newtype Balance = Balance { balanceCents :: Int }
 instance Monoid Balance where
   mempty = Balance 0
   mappend (Balance a) (Balance b) = Balance (a+b)
+
+-- XXX semigroup?
+negateBalance :: Balance -> Balance
+negateBalance (Balance b) = Balance (negate b)
 
 newtype Balances = Balances { unBalances :: (Map Person Balance) }
                    deriving (Show, Eq, Read)
@@ -61,21 +70,78 @@ simpleTransactionToTransaction (SimpleTransaction payer benefitors sum) =
                    negate (balanceCents sum) /// length benefitors
         benefitors' = zip benefitors balances
 
------------------------------
--- Flows, i.e. debt graphs --
------------------------------
+-----------------
+-- Debt Graphs --
+-----------------
 
-data Flow = Flow { flowBalance :: Balance,
-                   flowFrom :: Person,
-                   flowTo :: Person }
-            deriving (Show, Eq)
+type DebtGraph = M.Map Person (M.Map Person Balance)
 
--- XXX don't use lists?
--- XXX code duplication from simpleTransactionToTransactions
-simpleTransactionFlows :: SimpleTransaction -> [Flow]
-simpleTransactionFlows (SimpleTransaction payer benefitors sum) = flows
-  where balances = map Balance $
-                   -- XXX is negation appropriate here?
-                   negate (balanceCents sum) /// length benefitors
-        flows = zipWith (\person balance -> Flow balance payer person)
-                benefitors balances
+eliminateZeros :: M.Map Person Balance -> M.Map Person Balance
+eliminateZeros = M.filter (/=mempty)
+
+-- Make DebtGraph a newtype to avoid overlapping instance here
+instance Monoid DebtGraph where
+  mempty = M.empty
+  mappend = M.unionWith (\a b -> eliminateZeros $ M.unionWith mappend a b)
+
+
+addDebt :: DebtGraph -> Person -> Person -> Balance -> DebtGraph
+addDebt g from to bal =
+  mconcat [g, M.singleton from $ M.singleton to bal,
+           M.singleton to $ M.singleton from (negateBalance bal)]
+
+-- iteratively: find a person who isn't a sink or a source and make them one
+propagateDebts :: DebtGraph -> DebtGraph
+propagateDebts g = case next of Nothing -> g
+                                Just g' -> propagateDebts g'
+  where next = msum $ map (eliminate g) (M.keys g)
+
+-- local
+data Debt = Debt Person Person Balance
+
+apply :: DebtGraph -> Debt -> DebtGraph
+apply g (Debt from to bal) = addDebt g from to bal
+
+applyMany :: DebtGraph -> [Debt] -> DebtGraph
+applyMany g ps = foldl' apply g ps
+
+eliminate :: DebtGraph -> Person -> Maybe DebtGraph
+eliminate g p
+  | null creditors || null debitors = Nothing
+  | otherwise = Just $ eliminate' g p creditors debitors
+  where status = M.findWithDefault M.empty p g
+        creditors = M.keys $ M.filter (<mempty) status
+        debitors = M.keys $ M.filter (>mempty) status
+
+eliminate' :: DebtGraph -> Person -> [Person] -> [Person] -> DebtGraph
+eliminate' g p [] _  = g
+eliminate' g p _  [] = g
+eliminate' g p (c:cs) (d:ds)
+  = eliminate' (applyMany g [Debt p c $ Balance amount,
+                             Debt c d $ Balance amount,
+                             Debt d p $ Balance amount])
+    p
+    (if amount == abs csum then cs else c:cs)
+    (if amount == abs dsum then ds else d:ds)
+  where Just status = M.lookup p g
+        Just (Balance csum) = M.lookup c status
+        Just (Balance dsum) = M.lookup d status
+        amount = min (abs csum) (abs dsum)
+
+example1 :: DebtGraph
+example1 = applyMany M.empty [Debt a b $ Balance 10,
+                              Debt a b $ Balance 1,
+                              Debt a c $ Balance 1,
+                              Debt c b $ Balance 5,
+                              Debt b d $ Balance 1,
+                              Debt b a $ Balance 2]
+  where a = Person "a"
+        b = Person "b"
+        c = Person "c"
+        d = Person "d"
+
+printDebtGraph g = forM_ (M.assocs g) $ \(Person p,status) -> do
+  putStr $ p ++ ": "
+  forM_ (M.assocs status) $ \(Person p',Balance bal) ->
+    putStr $ p'++","++show bal++" "
+  putStrLn ""
