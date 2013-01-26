@@ -17,7 +17,7 @@ import Data.Text.Lazy (unpack)
 import Data.Time.Clock (getCurrentTime)
 import Happstack.Server hiding (method)
 import Text.Blaze.Html5 (Html, (!), a, form, input, p, toHtml, label)
-import Text.Blaze.Html5.Attributes (href, type_, name, size, action, method, value)
+import qualified Text.Blaze.Html5.Attributes as Attr
 import qualified Text.Blaze.Html5 as H
 
 main :: IO ()
@@ -32,6 +32,7 @@ route db = msum
   , dirs "transaction/delete" $ page_transaction_delete db
   , dirs "transaction/show" $ page_transaction_show db
   , dir "person" $ page_person db
+  , dir "static" $ serveDirectory EnableBrowsing ["index.html"] "static"
   , nullDir >> homePage db]
 
 template :: String -> Html -> Response
@@ -39,9 +40,18 @@ template title body = toResponse $
   H.html $ do
     H.head $ do
       H.title (toHtml title)
+      H.link ! Attr.rel "stylesheet" ! Attr.type_ "text/css"
+        ! Attr.href "/static/style.css"
     H.body $ do
-      body
-      p $ a ! href "/" $ "back home"
+      H.div ! Attr.id "header" $ do
+        H.h1 ! Attr.class_ "title" $ H.a ! Attr.href "/" $ do
+          H.img ! Attr.src "/static/buffalo_small.png"
+          "NIKLS"
+        H.h2 $ toHtml title
+      H.div ! Attr.id "body" $ do
+        body
+      H.div ! Attr.id "footer" $
+        "footer footer footer footer"
 
 homePage db = do
   g <- liftIO $ viewDebtGraph db
@@ -49,7 +59,7 @@ homePage db = do
   let pro = propagateDebts g
   let people = M.keys g
   ok $ template "Home Page" $ do
-    H.h1 "Balances"
+    H.h3 "Balances"
     H.ul $ forM_ people $ \p -> H.li $ do
       toHtml p
       toHtml (" : " :: String)
@@ -64,10 +74,9 @@ homePage db = do
         toHtml (" : " :: String)
         toHtml balance
         toHtml (", " :: String)
-
     transaction_add_form
-
-    H.p $ a ! href "/transaction/list" $ "transactions"
+    H.h3 "More"
+    H.ul $ H.li $ a ! Attr.href "/transaction/list" $ "transactions"
 
 redir_to_transaction :: TransactionID -> ServerPart Response
 redir_to_transaction id =
@@ -75,13 +84,18 @@ redir_to_transaction id =
   (toResponse ("" :: String))
 
 transaction_add_form :: Html
-transaction_add_form = do
-  H.form ! method "GET" ! action "/transaction/add" $ do
-    H.p $ do H.label "Payer: " >> H.input ! type_ "text" ! name "payer" ! size "10"
-             H.label "Benefitors: " >> H.input ! type_ "text" ! name "benefitors" ! size "40"
-             H.label "Sum: " >> H.input ! type_ "text" ! name "sum" ! size "5"
-    H.p $ H.label "Description: " >> H.input ! type_ "text" ! name "description" ! size "40"
-    H.p $ H.input ! type_ "submit" ! name "add"
+transaction_add_form = H.div ! Attr.class_ "addform" $ do
+  H.h3 "Add transaction"
+  H.form ! Attr.method "GET" ! Attr.action "/transaction/add" $ do
+    H.p $ do H.label "Payer: "
+             H.input ! Attr.type_ "text" ! Attr.name "payer" ! Attr.size "10"
+             H.label "Benefitors: "
+             H.input ! Attr.type_ "text" ! Attr.name "benefitors" ! Attr.size "40"
+             H.label "Sum: "
+             H.input ! Attr.type_ "text" ! Attr.name "sum" ! Attr.size "5"
+    H.p $ do H.label "Description: "
+             H.input ! Attr.type_ "text" ! Attr.name "description" ! Attr.size "40"
+    H.p $ H.button ! Attr.type_ "submit" $ "Transact"
 
 page_transaction_add :: DB -> ServerPart Response
 page_transaction_add db = do
@@ -105,8 +119,9 @@ page_transaction_list db = do
 
 transaction_delete_form :: TransactionID -> Html
 transaction_delete_form id =
-  H.form ! method "GET" ! action (H.toValue $ "/transaction/delete/"++show id) $
-  H.p $ H.button ! type_ "submit" ! name "delete" $
+  H.form ! Attr.method "GET"
+  ! Attr.action (H.toValue $ "/transaction/delete/"++show id) $
+  H.p $ H.button ! Attr.type_ "submit" ! Attr.name "delete" $
   toHtml ("Delete transaction "++show id)
 
 page_transaction_show :: DB -> ServerPart Response
@@ -129,19 +144,19 @@ page_person db = path $ \p -> do
   let bal = unBalances $ balances g
   let opt = propagateDebts g
   ok $ template ("Person " ++ p) $ do
-    H.p $ do "Balance: "
-             toHtml (fromJust $ M.lookup person bal)
-    H.p $ do "Debts: "
-             H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person g) $
-               \(p',balance) -> H.li $ do
-                 toHtml p'
-                 " : "
-                 toHtml balance
-    H.p $ do "Propagated debts: "
-             H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person opt) $
-               \(p',balance) -> H.li $ do
-                 toHtml p'
-                 " : "
-                 toHtml balance
-    H.p $ do "Transactions: "
-             H.ul $ forM_ ts (H.li . toHtml)
+    H.h3 "Balance: "
+    H.p $ toHtml (fromJust $ M.lookup person bal)
+    H.h3 "Debts: "
+    H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person g) $
+      \(p',balance) -> H.li $ do
+        toHtml p'
+        " : "
+        toHtml balance
+    H.h3 "Propagated debts: "
+    H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person opt) $
+      \(p',balance) -> H.li $ do
+        toHtml p'
+        " : "
+        toHtml balance
+    H.h3 "Transactions: "
+    H.ul $ forM_ ts (H.li . toHtml)
