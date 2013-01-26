@@ -2,8 +2,13 @@
 
 module Main where
 
+import Domain
+import Store
+
 import Control.Applicative (optional)
-import Control.Monad (msum)
+import Control.Exception
+import Control.Monad (msum, forM_)
+import Control.Monad.Trans (liftIO)
 import Data.Text (Text)
 import Data.Text.Lazy (unpack)
 import Happstack.Server
@@ -12,12 +17,14 @@ import Text.Blaze.Html5.Attributes (href)
 import qualified Text.Blaze.Html5 as H
 
 main :: IO ()
-main = simpleHTTP nullConf myApp
+main = bracket openDatabase
+               closeDatabase
+               (\db -> simpleHTTP nullConf (route db))
 
-myApp :: ServerPart Response
-myApp = msum
-  [ dir "echo" $ echo
-  , dir "query" $ queryParams
+route :: DB -> ServerPart Response
+route db = msum
+  [ dir "transactions" $ page_transactions db
+  , dir "debtgraph" $ page_debtgraph db
   , homePage ]
 
 template :: Text -> Html -> Response
@@ -29,20 +36,19 @@ template title body = toResponse $
       body
       p $ a ! href "/" $ "back home"
 
-homePage = ok $ template "home page" $ do
+homePage = ok $ template "Home Page" $ do
   H.h1 "Hello!"
-  H.p "Lorem ipsum"
-  H.p $ a ! href "/echo/secret%20message" $ "echo"
-  H.p $ a ! href "/query?foo=bar" $ "query parameters"
+  H.p $ a ! href "/transactions" $ "transactions"
+  H.p $ a ! href "/debtgraph" $ "debtgraph"
 
-echo = path $ \(msg :: String) ->
-  ok $ template "echo" $ do
-    p $ "echo says :" >> toHtml msg
-    p "Change the url to echo something else."
+page_transactions :: DB -> ServerPart Response
+page_transactions db = do
+  ts <- liftIO $ viewTransactions db
+  ok $ template "Transactions" $ do
+    H.ul $ forM_ ts (H.li . toHtml . show)
 
-queryParams :: ServerPart Response
-queryParams =
-  do mFoo <- optional $ lookText "foo"
-     ok $ template "query params" $ do
-       p $ "foo is set to: " >> toHtml (show mFoo)
-       p $ "change the url to set it to something else."
+page_debtgraph :: DB -> ServerPart Response
+page_debtgraph db = do
+  g <- liftIO $ viewDebtGraph db
+  ok $ template "Debt Graph" $ do
+    H.p $ toHtml (show g)

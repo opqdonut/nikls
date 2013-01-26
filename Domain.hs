@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances, DeriveDataTypeable #-}
 
 module Domain where
 
@@ -8,7 +8,8 @@ import qualified Data.Map.Strict as M
 import Data.Monoid
 import Data.Ratio
 import Data.Time
-import Data.Graph as G
+import Data.Typeable (Typeable)
+import System.Locale (defaultTimeLocale)
 
 type Map = M.Map
 
@@ -46,6 +47,8 @@ instance Monoid Balances where
 -----------------
 
 type DebtGraph = M.Map Person (M.Map Person Balance)
+
+emptyDebtGraph = M.empty
 
 printDebtGraph :: DebtGraph -> IO ()
 printDebtGraph g = forM_ (M.assocs g) $ \(Person p,status) -> do
@@ -132,14 +135,32 @@ test1 = balances example1 == balances (propagateDebts example1)
 -- instead of duplicating the /// logic everywhere...
 data SimpleTransaction = SimpleTransaction { stPayer :: Person,
                                              stBenefitors :: [Person],
-                                             stSum :: Balance }
-
+                                             stSum :: Balance,
+                                             stDescription :: String,
+                                             stTime :: UTCTime }
+                         deriving (Show, Read, Typeable)
 (///) :: Integral a => a -> a -> [a]
 a /// b = zipWith (-) (tail steps) steps
   where steps = [truncate (a * x % b) | x<-[0..b]]
 
 simpleTransactionDebts :: SimpleTransaction -> [Debt]
-simpleTransactionDebts (SimpleTransaction payer benefitors sum) =
+simpleTransactionDebts (SimpleTransaction payer benefitors sum _ _) =
   zipWith (\p b -> Debt payer p b) benefitors balances
   where balances = map Balance $
                    balanceCents sum /// length benefitors
+
+applySimpleTransaction :: DebtGraph -> SimpleTransaction -> DebtGraph
+applySimpleTransaction g st = applyMany g (simpleTransactionDebts st)
+
+applySimpleTransactions :: DebtGraph -> [SimpleTransaction] -> DebtGraph
+applySimpleTransactions = foldl' applySimpleTransaction
+
+
+t = readTime defaultTimeLocale "%Y-%m-%d %R"
+
+examplet1 = SimpleTransaction (Person "a") [Person "a", Person "b", Person "c"]
+            (Balance 100) "Pizza" (t "2013-01-15 16:37")
+examplet2 = SimpleTransaction (Person "b") [Person "a", Person "c"]
+            (Balance 70) "Kebab" (t "2013-01-16 18:50")
+examplet3 = SimpleTransaction (Person "c") [Person "a", Person "b", Person "c"]
+            (Balance 80) "Beer" (t "2013-01-17 19:00")
