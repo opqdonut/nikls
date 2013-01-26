@@ -41,6 +41,9 @@ template title body = toResponse $
     H.head $ do
       H.title (toHtml title)
       H.link ! Attr.rel "stylesheet" ! Attr.type_ "text/css"
+        ! Attr.media "screen"
+        ! Attr.href "/static/bootstrap/css/bootstrap.min.css"
+      H.link ! Attr.rel "stylesheet" ! Attr.type_ "text/css"
         ! Attr.href "/static/style.css"
     H.body $ do
       H.div ! Attr.id "header" $ do

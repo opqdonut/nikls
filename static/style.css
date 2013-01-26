@@ -1,16 +1,12 @@
 body { background: #E0E0E0;
-       font-family: sans-serif;
        color: #404040; }
 
-/*h1, h2, h3 { color: black }*/
-
-h1.title span { display: table-cell;
-		vertical-align: middle; }
+/*h1.title span { display: table-cell;
+		vertical-align: middle; }*/
 
 h1.title img { padding-right: 0.5em }
 
 a { color: black;
-    text-decoration: none;
     font-weight: bold; }
 
 .balance { font-family: monospace; }
