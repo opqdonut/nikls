@@ -12,9 +12,9 @@ import Data.Graph as G
 
 type Map = M.Map
 
--------------------------------
--- Balances and Transactions --
--------------------------------
+--------------------------
+-- Persons and Balances --
+--------------------------
 
 newtype Person = Person { personName :: String }
                deriving (Show, Read, Eq, Ord)
@@ -41,40 +41,21 @@ instance Monoid Balances where
   mempty = Balances M.empty
   mappend (Balances a) (Balances b) = Balances $ M.unionWith mappend a b
 
-data Transaction = Transaction { transactionBalances :: Balances
-                                 {-, transactionTime :: UTCTime
-                                 ,transactionDescription :: String-} }
-                   deriving (Show, Read, Eq)
-
-applyTransaction :: Balances -> Transaction -> Balances
-applyTransaction b t = mappend b (transactionBalances t)
-
--------------------------
--- Simple transactions --
--------------------------
-
--- XXX a simpleTransaction should really contain the result of ///
--- instead of duplicating the /// logic everywhere...
-data SimpleTransaction = SimpleTransaction { stPayer :: Person,
-                                             stBenefitors :: [Person],
-                                             stSum :: Balance }
-
-(///) :: Integral a => a -> a -> [a]
-a /// b = zipWith (-) (tail steps) steps
-  where steps = [truncate (a * x % b) | x<-[0..b]]
-
-simpleTransactionToTransaction :: SimpleTransaction -> Transaction
-simpleTransactionToTransaction (SimpleTransaction payer benefitors sum) =
-  Transaction $ Balances $ M.fromList $ (payer,sum):benefitors'
-  where balances = map Balance $
-                   negate (balanceCents sum) /// length benefitors
-        benefitors' = zip benefitors balances
-
 -----------------
 -- Debt Graphs --
 -----------------
 
 type DebtGraph = M.Map Person (M.Map Person Balance)
+
+printDebtGraph :: DebtGraph -> IO ()
+printDebtGraph g = forM_ (M.assocs g) $ \(Person p,status) -> do
+  putStr $ p ++ ": "
+  forM_ (M.assocs status) $ \(Person p',Balance bal) ->
+    putStr $ p'++","++show bal++" "
+  putStrLn ""
+
+balances :: DebtGraph -> Balances
+balances g = Balances $ M.map (mconcat . M.elems) g
 
 eliminateZeros :: M.Map Person Balance -> M.Map Person Balance
 eliminateZeros = M.filter (/=mempty)
@@ -83,7 +64,6 @@ eliminateZeros = M.filter (/=mempty)
 instance Monoid DebtGraph where
   mempty = M.empty
   mappend = M.unionWith (\a b -> eliminateZeros $ M.unionWith mappend a b)
-
 
 addDebt :: DebtGraph -> Person -> Person -> Balance -> DebtGraph
 addDebt g from to bal =
@@ -98,6 +78,7 @@ propagateDebts g = case next of Nothing -> g
 
 -- local
 data Debt = Debt Person Person Balance
+          deriving (Show, Read, Eq)
 
 apply :: DebtGraph -> Debt -> DebtGraph
 apply g (Debt from to bal) = addDebt g from to bal
@@ -140,8 +121,25 @@ example1 = applyMany M.empty [Debt a b $ Balance 10,
         c = Person "c"
         d = Person "d"
 
-printDebtGraph g = forM_ (M.assocs g) $ \(Person p,status) -> do
-  putStr $ p ++ ": "
-  forM_ (M.assocs status) $ \(Person p',Balance bal) ->
-    putStr $ p'++","++show bal++" "
-  putStrLn ""
+test1 :: Bool
+test1 = balances example1 == balances (propagateDebts example1)
+
+-------------------------
+-- Simple transactions --
+-------------------------
+
+-- XXX a simpleTransaction should really contain the result of ///
+-- instead of duplicating the /// logic everywhere...
+data SimpleTransaction = SimpleTransaction { stPayer :: Person,
+                                             stBenefitors :: [Person],
+                                             stSum :: Balance }
+
+(///) :: Integral a => a -> a -> [a]
+a /// b = zipWith (-) (tail steps) steps
+  where steps = [truncate (a * x % b) | x<-[0..b]]
+
+simpleTransactionDebts :: SimpleTransaction -> [Debt]
+simpleTransactionDebts (SimpleTransaction payer benefitors sum) =
+  zipWith (\p b -> Debt payer p b) benefitors balances
+  where balances = map Balance $
+                   balanceCents sum /// length benefitors
