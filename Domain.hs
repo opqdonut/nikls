@@ -4,7 +4,7 @@ module Domain where
 
 import Control.Monad (msum, forM_)
 import Data.List
-import qualified Data.Map.Strict as M
+import qualified Data.Map as M
 import Data.Monoid
 import Data.Ratio
 import Data.Time
@@ -18,10 +18,10 @@ type Map = M.Map
 --------------------------
 
 newtype Person = Person { personName :: String }
-               deriving (Show, Read, Eq, Ord)
+               deriving (Show, Read, Eq, Ord, Typeable)
 
 newtype Balance = Balance { balanceCents :: Int }
-                deriving (Show, Read, Eq, Ord)
+                deriving (Show, Read, Eq, Ord, Typeable)
 
 instance Monoid Balance where
   mempty = Balance 0
