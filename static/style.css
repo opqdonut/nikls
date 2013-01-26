@@ -1,23 +1,4 @@
-body { background: #E0E0E0;
-       color: #404040; }
-
-/*h1.title span { display: table-cell;
-		vertical-align: middle; }*/
-
-h1.title img { padding-right: 0.5em }
-
-a { color: black;
-    font-weight: bold; }
+.person { color: black;
+	  font-weight: bold; }
 
 .balance { font-family: monospace; }
-
-/*div#header { background: #E0FFE0 }
-
-div#body { background: #FFE0E0 }
-
-div#footer { background: #FFFFE0 }
-*/
-
-div.addform { background: #F0F0F0;
-	      padding-left: 1em;
-	      border-style: solid }

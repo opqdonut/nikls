@@ -46,15 +46,17 @@ template title body = toResponse $
       H.link ! Attr.rel "stylesheet" ! Attr.type_ "text/css"
         ! Attr.href "/static/style.css"
     H.body $ do
-      H.div ! Attr.id "header" $ do
-        H.h1 ! Attr.class_ "title" $ H.a ! Attr.href "/" $ do
-          H.img ! Attr.src "/static/buffalo_small.png"
-          "NIKLS"
-        H.h2 $ toHtml title
-      H.div ! Attr.id "body" $ do
-        body
-      H.div ! Attr.id "footer" $
-        "footer footer footer footer"
+      H.div ! Attr.class_ "container" $ do
+        H.div ! Attr.id "page-header" $ do
+          H.h1 ! Attr.class_ "title" $ H.a ! Attr.href "/" $ do
+            H.img ! Attr.src "/static/buffalo_small.png"
+            " NIKLS "
+            H.small $ "NIKLS Is Kinda Like Scred"
+          H.h2 $ toHtml title
+        H.div ! Attr.id "body" $ do
+          body
+        H.div ! Attr.id "footer" $
+          "footer footer footer footer"
 
 homePage db = do
   g <- liftIO $ viewDebtGraph db
@@ -87,18 +89,20 @@ redir_to_transaction id =
   (toResponse ("" :: String))
 
 transaction_add_form :: Html
-transaction_add_form = H.div ! Attr.class_ "addform" $ do
+transaction_add_form = H.div ! Attr.class_ "well" $ do
   H.h3 "Add transaction"
-  H.form ! Attr.method "GET" ! Attr.action "/transaction/add" $ do
-    H.p $ do H.label "Payer: "
-             H.input ! Attr.type_ "text" ! Attr.name "payer" ! Attr.size "10"
-             H.label "Benefitors: "
-             H.input ! Attr.type_ "text" ! Attr.name "benefitors" ! Attr.size "40"
-             H.label "Sum: "
-             H.input ! Attr.type_ "text" ! Attr.name "sum" ! Attr.size "5"
-    H.p $ do H.label "Description: "
-             H.input ! Attr.type_ "text" ! Attr.name "description" ! Attr.size "40"
-    H.p $ H.button ! Attr.type_ "submit" $ "Transact"
+  H.form ! Attr.method "GET" ! Attr.action "/transaction/add"
+    ! Attr.class_ "form-inline" $ do
+    H.p $ do H.input ! Attr.type_ "text" ! Attr.name "payer"
+               ! Attr.class_ "input-small" ! Attr.placeholder "Payer"
+             H.input ! Attr.type_ "text" ! Attr.name "benefitors"
+               ! Attr.placeholder "Benefitors"
+             H.input ! Attr.type_ "text" ! Attr.name "sum"
+               ! Attr.class_ "input-small" ! Attr.placeholder "Sum"
+    H.p $ do H.input ! Attr.type_ "text" ! Attr.name "description"
+               ! Attr.placeholder "Description"
+               ! Attr.class_ "input-xlarge"
+             H.button ! Attr.type_ "submit" ! Attr.class_ "btn" $ "Transact"
 
 page_transaction_add :: DB -> ServerPart Response
 page_transaction_add db = do
@@ -124,8 +128,10 @@ transaction_delete_form :: TransactionID -> Html
 transaction_delete_form id =
   H.form ! Attr.method "GET"
   ! Attr.action (H.toValue $ "/transaction/delete/"++show id) $
-  H.p $ H.button ! Attr.type_ "submit" ! Attr.name "delete" $
-  toHtml ("Delete transaction "++show id)
+  H.p $ H.button ! Attr.type_ "submit" ! Attr.name "delete"
+  ! Attr.class_ "btn" $ do
+    H.i ! Attr.class_ "icon-remove" $ ""
+    toHtml (" Delete transaction "++show id)
 
 page_transaction_show :: DB -> ServerPart Response
 page_transaction_show db = path $ \id -> do
@@ -148,14 +154,14 @@ page_person db = path $ \p -> do
   let opt = propagateDebts g
   ok $ template ("Person " ++ p) $ do
     H.h3 "Balance: "
-    H.p $ toHtml (fromJust $ M.lookup person bal)
-    H.h3 "Debts: "
+    H.p ! Attr.class_ "lead" $ toHtml (fromJust $ M.lookup person bal)
+    H.h3 "Breakdown: "
     H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person g) $
       \(p',balance) -> H.li $ do
         toHtml p'
         " : "
         toHtml balance
-    H.h3 "Propagated debts: "
+    H.h3 "Propagated: "
     H.ul $ forM_ (M.assocs $ fromJust $ M.lookup person opt) $
       \(p',balance) -> H.li $ do
         toHtml p'

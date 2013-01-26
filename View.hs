@@ -15,7 +15,10 @@ instance ToMarkup Person where
                         toHtml s
 
 instance ToMarkup Balance where
-  toMarkup (Balance b) = H.span ! class_ (toValue "balance") $
+  toMarkup (Balance b) = H.span
+                         ! class_ (toValue $ "balance badge " ++
+                                   if b<0 then "badge-important"
+                                   else "badge-success") $
                          toHtml b
 
 instance ToMarkup SimpleTransaction where
@@ -34,7 +37,7 @@ instance ToMarkup StoredTransaction where
   toMarkup (StoredTransaction tid del st) =
     H.span ! class_ (toValue "storedtransaction") $ do
       (if del then H.del else id) $ do
-        H.a ! class_ (toValue "transactionid")
+        H.a ! class_ (toValue "transactionid badge badge-info")
           ! href (toValue $ "/transaction/show/"++show tid) $
-          toHtml tid
+          toHtml $ "Transaction " ++ show tid
         toHtml " " >> toHtml st
