@@ -21,22 +21,28 @@ import Text.Blaze.Html5 (Html, (!), a, form, input, p, toHtml, label)
 import qualified Text.Blaze.Html5.Attributes as Attr
 import qualified Text.Blaze.Html5 as H
 
+-- XXX _disallow_ uploads
+bodyPolicy = defaultBodyPolicy "/tmp/" 4096 4096 4096
+
 main :: IO ()
 main = bracket openDatabase
                closeDatabase
                (\db -> simpleHTTP nullConf (route db))
 
 route :: DB -> ServerPart Response
-route db = msum
-  [ dirs "transaction/list" $ page_transaction_list db
-  , dirs "transaction/add" $ page_transaction_add db
-  , dirs "transaction/delete" $ page_transaction_delete db
-  , dirs "transaction/show" $ page_transaction_show db
-  , dir "person" $ page_person db
-  , dir "set_password" $ page_set_password db
-  , dir "static" $ serveDirectory EnableBrowsing ["index.html"] "static"
-  , dir "login" $ page_login db
-  , nullDir >> page_home db]
+route db = do
+  decodeBody bodyPolicy
+  msum
+    [ dirs "transaction/list" $ page_transaction_list db
+    , dirs "transaction/add" $ page_transaction_add db
+    , dirs "transaction/delete" $ page_transaction_delete db
+    , dirs "transaction/show" $ page_transaction_show db
+    , dir "person" $ page_person db
+    , dir "set_password" $ page_set_password db
+    , dir "static" $ serveDirectory EnableBrowsing ["index.html"] "static"
+      -- XXX require ssl
+    , dir "login" $ page_login db
+    , nullDir >> page_home db]
 
 alert :: Maybe String -> Maybe String -> Html
 alert Nothing _ = toHtml ("" :: String) -- XXX emptyHtml?
@@ -172,7 +178,7 @@ page_transaction_delete db = path $ \id -> do
 
 claim_person_form :: Person -> Html
 claim_person_form p =
-  H.form ! Attr.method "GET"
+  H.form ! Attr.method "POST"
   ! Attr.action (H.toValue $ "/set_password/"++personName p)
   $ H.p $ do
     "Are you " >> toHtml p >> "?"
@@ -209,8 +215,9 @@ page_set_password :: DB -> ServerPart Response
 page_set_password db = path $ \person -> do
   let p = Person person
   passwords <- liftIO $ viewPasswords db
+
   password <- look "password"
   if not (M.member p passwords)
     then do liftIO $ setPassword db p password
             redir_with_message ("/person/"++person) "Password set!" "success"
-    else ok $ toResponse ("weird" :: String)
+    else unauthorized $ toResponse ("Rejected." :: String)
