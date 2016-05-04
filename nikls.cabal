@@ -1,0 +1,18 @@
+name:                nikls
+version:             0.0.0.0
+synopsis:            Nikls Is Kinda Like Scred
+description:         See README.md
+homepage:            https://github.com/opqdonut/nikls#readme
+license:             UnspecifiedLicense
+author:              Joel Kaasinen
+maintainer:          joel.kaasinen@gmail.com
+copyright:           2016 Joel Kaasinen
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable nikls
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
