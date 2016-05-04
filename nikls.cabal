@@ -20,6 +20,7 @@ executable nikls
                      , servant == 0.7
                      , servant-server == 0.7
                      , text
+                     , transformers
                      , wai
                      , warp
   main-is:             Main.hs
