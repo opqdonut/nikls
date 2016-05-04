@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Api where
 
@@ -11,15 +12,21 @@ import Servant.API.ContentTypes
 import Data.Proxy
 import Control.Applicative
 import Data.Text as T
+import Data.ByteString.Lazy.Char8 as BS
 
 -- Api definition
 
-type BalanceApi =
-  "balance" :> Capture "account" Account :> Get '[PlainText] Balance
+type AccountApi =
+  "account" :> Capture "account" Account :>
+    ("balance" :> Get '[PlainText] Balance
+     :<|>
+     "transactions" :> Get '[PlainText] [Transaction])
+
 type TransactionApi =
   "transaction" :> Capture "timestamp" Timestamp :> Get '[PlainText] Transaction
+  :<|> "transactions" :> Get '[PlainText] [Transaction]
 
-type Api = "v0" :> (BalanceApi :<|> TransactionApi)
+type Api = "v0" :> (AccountApi :<|> TransactionApi)
 
 api :: Proxy Api
 api = Proxy
@@ -37,8 +44,14 @@ instance FromHttpApiData Timestamp where
 plaintext :: Proxy PlainText
 plaintext = Proxy
 
+bshow :: Show a => a -> BS.ByteString
+bshow = BS.pack . show
+
 instance MimeRender PlainText Transaction where
-  mimeRender _ a = mimeRender plaintext $ show a
+  mimeRender _ = bshow
+
+instance MimeRender PlainText [Transaction] where
+  mimeRender _ = bshow
 
 instance MimeRender PlainText Balance where
-  mimeRender _ (Balance b) = mimeRender plaintext $ show b
+  mimeRender _ (Balance b) = bshow b

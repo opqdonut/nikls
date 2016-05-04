@@ -30,7 +30,11 @@ instance Monoid Transaction where
   mappend (Transaction tx x) (Transaction ty y) =
     Transaction (mappend tx ty) (M.unionWith mappend x y)
 
+transactionValid :: Transaction -> Bool
 transactionValid (Transaction _ bs) = mconcat (M.elems bs) == mempty
+
+concerns :: Account -> Transaction -> Bool
+concerns acc (Transaction _ ts) = M.member acc ts
 
 -- -- -- --
 
