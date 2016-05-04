@@ -22,8 +22,11 @@ dbState db = liftIO $ mconcat <$> readIORef db
 dbTransactions :: MonadIO m => Database -> m [Transaction]
 dbTransactions db = liftIO $ readIORef db
 
+dbAdd :: MonadIO m => Transaction -> Database -> m ()
+dbAdd t db = liftIO $ atomicModifyIORef' db (\ts -> ((t:ts),()))
+
 server :: Database -> Server Api
-server db = account :<|> transaction :<|> allTransactions
+server db = account :<|> transaction :<|> addTransaction :<|> allTransactions
   where account :: Account -> Handler Balance :<|> Handler [Transaction]
         account acc = balance acc :<|> transactionsFor acc
         balance :: Account -> Handler Balance
@@ -34,6 +37,8 @@ server db = account :<|> transaction :<|> allTransactions
         transaction :: Timestamp -> Handler Transaction
         transaction ts =
           head . filter (\t -> transactionTime t == ts) <$> dbTransactions db
+        addTransaction :: Transaction -> Handler String
+        addTransaction t = "ok" <$ dbAdd t db
         allTransactions :: Handler [Transaction]
         allTransactions = dbTransactions db
 
