@@ -4,6 +4,7 @@ module Main where
 
 import Api
 import Model
+import Render
 
 import Data.IORef
 import Data.Monoid
