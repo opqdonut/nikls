@@ -7,14 +7,14 @@ module Render where
 
 import Model
 
+import Control.Monad
 import Data.Proxy
 import Servant.API
---import Servant.API.ContentTypes
 import Control.Applicative
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as BS
 import Text.Read (readEither)
-import Data.Aeson (ToJSON(..), Value(..), (.=), object, encode)
+import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), (.=), (.:), object, encode)
 import qualified Data.Map.Strict as M
 
 -- parsing url frangments
@@ -48,7 +48,7 @@ instance MimeRender PlainText [Transaction] where
 instance MimeRender PlainText Balance where
   mimeRender _ (Balance b) = bshow b
 
--- rendering json
+-- parsing & rendering json
 
 -- XXX implement ToJSON.toEncoding for better performance
 instance ToJSON Transaction where
@@ -59,12 +59,39 @@ instance ToJSON Transaction where
                         T.pack "balance" .= toJSON b]
                | (a,b) <- M.assocs balances]
 
+instance FromJSON Transaction where
+  parseJSON (Object o) =
+    do t <- o .: T.pack "time" >>= parseJSON
+       bs <- o .: T.pack "balances" >>= mapM parsePair
+       return $ Transaction t (M.fromList bs)
+    where
+      parsePair (Object o) =
+        do a <- o .: T.pack "account" >>= parseJSON
+           b <- o .: T.pack "balance" >>= parseJSON
+           return (a,b)
+      parsePair _          = mzero
+  parseJSON _          = mzero
+
 instance ToJSON Balance where
   toJSON (Balance b) = Number (fromIntegral b)
+
+instance FromJSON Balance where
+  -- XXX check integerness
+  parseJSON (Number b) = return . Balance . round $ b
+  parseJSON _          = mzero
 
 instance ToJSON Account where
   toJSON (Account n) = String (T.pack n)
 
+instance FromJSON Account where
+  parseJSON (String n) = return . Account . T.unpack $ n
+  parseJSON _          = mzero
+
 instance ToJSON Timestamp where
   -- XXX strings instead?
   toJSON (Timestamp t) = Number (fromIntegral t)
+
+instance FromJSON Timestamp where
+  -- XXX check integerness
+  parseJSON (Number t) = return . Timestamp . round $ t
+  parseJSON _          = mzero

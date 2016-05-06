@@ -20,8 +20,7 @@ type AccountApi =
 type TransactionApi =
   "transaction" :> (
     Capture "timestamp" Timestamp :> Get Content Transaction
-    -- XXX no FromJSON instance yet, thus PlainText:
-    :<|> ReqBody '[PlainText] Transaction :> Post '[PlainText] String
+    :<|> ReqBody Content Transaction :> Post Content String
     :<|> Get Content [Transaction])
 
 type Api = "v0" :> (AccountApi :<|> TransactionApi)
