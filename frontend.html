@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Nikls is kinda like scred</title>
+
+<script>
+
+var backend = "http://localhost:8081/v0/";
+var headers = new Headers();
+headers.append("Accept", "application/json");
+var opts = {headers: headers};
+
+fetch(backend+'transaction', opts)
+.then(function(r) {
+    return r.json();
+})
+.then(function(ts) {
+    var ul = document.getElementById("transactions");
+    console.log(ts);
+    ts.forEach(function(t) {
+	var desc = t.time;
+	t.balances.forEach(function(b) {
+	    desc += "  " + b.account + ":" + b.balance;
+	});
+	console.log(desc);
+	var li = document.createElement("li");
+	li.appendChild(document.createTextNode(desc));
+	ul.appendChild(li);
+    });
+});
+
+</script>
+
+</head>
+
+<body>
+
+  <h1>All transactions:</h1>
+  <ul id="transactions"></ul>
+
+</body>
+</html>

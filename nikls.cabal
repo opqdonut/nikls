@@ -24,6 +24,7 @@ executable nikls
                      , text
                      , transformers
                      , wai
+                     , wai-cors
                      , warp
   main-is:             Main.hs
   other-modules:       Model Api Render Db

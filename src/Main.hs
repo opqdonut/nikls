@@ -13,6 +13,8 @@ import Control.Applicative
 import Servant
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Cors
+
 import qualified Data.Map.Strict as M
 
 server :: Database -> Server Api
@@ -34,7 +36,7 @@ server db = account :<|> transaction :<|> addTransaction :<|> allTransactions
         allTransactions = databaseTransactions db
 
 app :: Database -> Application
-app db = serve Api.api (server db)
+app db = simpleCors $ serve Api.api (server db)
 
 main :: IO ()
 main = do db <- openDatabase
