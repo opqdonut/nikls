@@ -13,7 +13,7 @@ instance Monoid Balance where
 newtype Account = Account { accountName :: String }
                   deriving (Show, Read, Eq, Ord)
 
-newtype Timestamp = Timestamp Word64
+newtype Timestamp = Timestamp { unTimestamp :: Word64 }
                     deriving (Show, Read, Eq, Ord)
 
 instance Monoid Timestamp where

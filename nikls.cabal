@@ -20,9 +20,10 @@ executable nikls
                      , containers
                      , servant == 0.7
                      , servant-server == 0.7
+                     , sqlite-simple
                      , text
                      , transformers
                      , wai
                      , warp
   main-is:             Main.hs
-  other-modules:       Model Api Render
+  other-modules:       Model Api Render Db
