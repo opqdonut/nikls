@@ -14,6 +14,7 @@ import Servant
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Cors
+import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 
 import qualified Data.Map.Strict as M
 
@@ -35,8 +36,12 @@ server db = account :<|> transaction :<|> addTransaction :<|> allTransactions
         allTransactions :: Handler [Transaction]
         allTransactions = databaseTransactions db
 
+mycors :: Request -> Maybe CorsResourcePolicy
+-- allow Content-Type header:
+mycors _ = Just $ simpleCorsResourcePolicy { corsRequestHeaders = simpleHeaders }
+
 app :: Database -> Application
-app db = simpleCors $ serve Api.api (server db)
+app db = logStdoutDev . cors mycors $ serve Api.api (server db)
 
 main :: IO ()
 main = do db <- openDatabase
