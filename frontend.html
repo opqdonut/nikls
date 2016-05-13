@@ -48,9 +48,14 @@ function add() {
 	return r.text();
     })
     .then(function(status) {
-	document.getElementById("status").innerHtml = status;
+	console.log("STATUS", status);
+	document.getElementById("status").textContent = status;
 	update();
     })
+    .catch(function(err) {
+	console.log("ERROR", err);
+	document.getElementById("status").textContent = err;
+    });
 }
 
 update()
