@@ -11,6 +11,6 @@ Built using [stack](http://haskellstack.org):
     stack build
     stack exec nikls
 
-Frontend is not served at the moment so just open it in your browser:
+Enjoy:
 
-    $BROWSER frontend.html
+    $BROWSER http://localhost:8081
