@@ -3,53 +3,47 @@ module Model where
 import qualified Data.Map.Strict as M
 import Data.Word
 
-newtype Balance = Balance { balanceCents :: Int }
-                deriving (Show, Read, Eq)
+newtype Sum = Sum { sumCents :: Int }
+            deriving (Show, Read, Eq)
 
-instance Monoid Balance where
-  mempty = Balance 0
-  mappend (Balance a) (Balance b) = Balance (a+b)
+instance Monoid Sum where
+  mempty = Sum 0
+  mappend (Sum a) (Sum b) = Sum (a+b)
 
 newtype Account = Account { accountName :: String }
-                  deriving (Show, Read, Eq, Ord)
+                deriving (Show, Read, Eq, Ord)
+
+newtype Balances = Balances { unBalances :: (M.Map Account Sum) }
+                 deriving (Show, Read)
+
+instance Monoid Balances where
+  mempty = Balances M.empty
+  mappend (Balances a) (Balances b) = Balances $ M.unionWith mappend a b
+
+balancesValid :: Balances -> Bool
+balancesValid (Balances b) = mconcat (M.elems b) == mempty
+
+balancesConcern :: Account -> Balances -> Bool
+balancesConcern acc (Balances b) = M.member acc b
+
+-- XXX unsafe
+balanceFor :: Balances -> Account -> Sum
+balanceFor (Balances b) acc = b M.! acc
 
 newtype Timestamp = Timestamp { unTimestamp :: Word64 }
                     deriving (Show, Read, Eq, Ord)
 
-instance Monoid Timestamp where
-  mempty = Timestamp 0
-  mappend (Timestamp a) (Timestamp b) = Timestamp (max a b)
-
 data Transaction =
   Transaction {transactionTime :: Timestamp,
-               transactionBalances :: (M.Map Account Balance) }
+               transactionDescription :: String,
+               transactionBalances :: Balances}
   deriving (Show, Read)
 
-instance Monoid Transaction where
-  mempty = Transaction mempty mempty
-  mappend (Transaction tx x) (Transaction ty y) =
-    Transaction (mappend tx ty) (M.unionWith mappend x y)
-
 transactionValid :: Transaction -> Bool
-transactionValid (Transaction _ bs) = mconcat (M.elems bs) == mempty
+transactionValid (Transaction _ _ bs) = balancesValid bs
 
 concerns :: Account -> Transaction -> Bool
-concerns acc (Transaction _ ts) = M.member acc ts
+concerns acc (Transaction _ _ bs) = balancesConcern acc bs
 
--- -- -- --
-
-alan = Account "alan"
-beck = Account "beck"
-carl = Account "carl"
-dave = Account "dave"
-
-b = Balance
-t time bs = Transaction (Timestamp time) (M.fromList bs)
-
-database :: [Transaction]
-database = [t 1 [(alan, b (-3)),(beck, b 3)]
-           ,t 2 [(carl, b 10),(dave, b (-5)),(beck, b (-5))]
-           ,t 3 [(beck, b (-6)),(alan, b 3),(carl, b 3)]]
-
-state :: Transaction
-state = mconcat database
+summarize :: [Transaction] -> Balances
+summarize = mconcat . map transactionBalances

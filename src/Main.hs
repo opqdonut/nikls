@@ -8,7 +8,6 @@ import Render
 import Db
 
 import Data.IORef
-import Data.Monoid
 import Control.Applicative
 import Servant
 import Network.Wai
@@ -20,11 +19,11 @@ import qualified Data.Map.Strict as M
 
 server :: Database -> Server Api
 server db = account :<|> transaction :<|> addTransaction :<|> allTransactions
-  where account :: Account -> Handler Balance :<|> Handler [Transaction]
+  where account :: Account -> Handler Sum :<|> Handler [Transaction]
         account acc = balance acc :<|> transactionsFor acc
-        balance :: Account -> Handler Balance
+        balance :: Account -> Handler Sum
         balance acc = do state <- databaseState db
-                         return $ transactionBalances state M.! acc
+                         return $ balanceFor state acc
         transactionsFor :: Account -> Handler [Transaction]
         transactionsFor acc = filter (concerns acc) <$> databaseTransactions db
         transaction :: Timestamp -> Handler Transaction

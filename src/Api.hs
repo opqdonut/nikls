@@ -10,11 +10,11 @@ import Data.Proxy
 
 -- Api definition
 
-type Content = '[PlainText, JSON]
+type Content = '[JSON]
 
 type AccountApi =
   "account" :> Capture "account" Account :>
-    ("balance" :> Get Content Balance
+    ("balance" :> Get Content Sum
      :<|> "transactions" :> Get Content [Transaction])
 
 type TransactionApi =

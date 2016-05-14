@@ -41,8 +41,8 @@ getAll = fromString "select * from transactions"
 databaseTransactions :: MonadIO m => Database -> m [Transaction]
 databaseTransactions conn = liftIO $ query_ conn getAll
 
-databaseState :: MonadIO m => Database -> m Transaction
-databaseState = fmap mconcat . databaseTransactions
+databaseState :: MonadIO m => Database -> m Balances
+databaseState = fmap summarize . databaseTransactions
 
 add :: Query
 add = fromString "insert into transactions (time, json) values (?,?)"

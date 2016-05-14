@@ -25,59 +25,16 @@ instance FromHttpApiData Account where
 instance FromHttpApiData Timestamp where
   parseUrlPiece t = Timestamp <$> parseUrlPiece t
 
--- rendering plaintext
-
-plaintext :: Proxy PlainText
-plaintext = Proxy
-
-bshow :: Show a => a -> BS.ByteString
-bshow = BS.pack . show
-
-instance MimeRender PlainText Transaction where
-  mimeRender _ = bshow
-
-instance MimeUnrender PlainText Transaction where
-  mimeUnrender _ bs =
-    case readEither (BS.unpack bs) of
-      Left err -> Left ("Couldn't read "++show bs++": "++err)
-      x -> x
-
-instance MimeRender PlainText [Transaction] where
-  mimeRender _ = bshow
-
-instance MimeRender PlainText Balance where
-  mimeRender _ (Balance b) = bshow b
-
 -- parsing & rendering json
 
 -- XXX implement ToJSON.toEncoding for better performance
-instance ToJSON Transaction where
-  toJSON (Transaction time balances) =
-    object [T.pack "time" .= toJSON time,
-            T.pack "balances" .= toJSON bs]
-    where bs = [object [T.pack "account" .= toJSON a,
-                        T.pack "balance" .= toJSON b]
-               | (a,b) <- M.assocs balances]
 
-instance FromJSON Transaction where
-  parseJSON (Object o) =
-    do t <- o .: T.pack "time" >>= parseJSON
-       bs <- o .: T.pack "balances" >>= mapM parsePair
-       return $ Transaction t (M.fromList bs)
-    where
-      parsePair (Object o) =
-        do a <- o .: T.pack "account" >>= parseJSON
-           b <- o .: T.pack "balance" >>= parseJSON
-           return (a,b)
-      parsePair _          = mzero
-  parseJSON _          = mzero
+instance ToJSON Sum where
+  toJSON (Sum b) = Number (fromIntegral b)
 
-instance ToJSON Balance where
-  toJSON (Balance b) = Number (fromIntegral b)
-
-instance FromJSON Balance where
+instance FromJSON Sum where
   -- XXX check integerness
-  parseJSON (Number b) = return . Balance . round $ b
+  parseJSON (Number b) = return . Sum . round $ b
   parseJSON _          = mzero
 
 instance ToJSON Account where
@@ -87,6 +44,23 @@ instance FromJSON Account where
   parseJSON (String n) = return . Account . T.unpack $ n
   parseJSON _          = mzero
 
+instance ToJSON Balances where
+  toJSON (Balances b) = toJSON pairs
+    where pairs = [object [T.pack "account" .= toJSON a,
+                           T.pack "balance" .= toJSON b]
+                  | (a,b) <- M.assocs b]
+
+instance FromJSON Balances where
+  parseJSON arr@(Array _) =
+    parseJSON arr >>= mapM parsePair >>= return . Balances . M.fromList
+    where
+      parsePair (Object o) =
+        do a <- o .: T.pack "account" >>= parseJSON
+           b <- o .: T.pack "balance" >>= parseJSON
+           return (a,b)
+      parsePair _          = mzero
+  parseJSON _           = mzero
+
 instance ToJSON Timestamp where
   -- XXX strings instead?
   toJSON (Timestamp t) = Number (fromIntegral t)
@@ -94,4 +68,18 @@ instance ToJSON Timestamp where
 instance FromJSON Timestamp where
   -- XXX check integerness
   parseJSON (Number t) = return . Timestamp . round $ t
+  parseJSON _          = mzero
+
+instance ToJSON Transaction where
+  toJSON (Transaction time description balances) =
+    object [T.pack "time" .= toJSON time,
+            T.pack "description" .= toJSON description,
+            T.pack "balances" .= toJSON balances]
+
+instance FromJSON Transaction where
+  parseJSON (Object o) =
+    do t <- o .: T.pack "time" >>= parseJSON
+       descr <- o .: T.pack "description" >>= parseJSON
+       bs <- o .: T.pack "balances" >>= parseJSON
+       return $ Transaction t descr bs
   parseJSON _          = mzero
