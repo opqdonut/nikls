@@ -16,6 +16,7 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Cors
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
+import Network.Wai.Middleware.Static (staticPolicy, only)
 
 import qualified Data.Map.Strict as M
 
@@ -53,7 +54,8 @@ mycors :: Request -> Maybe CorsResourcePolicy
 mycors _ = Just $ simpleCorsResourcePolicy { corsRequestHeaders = simpleHeaders }
 
 app :: Database -> Application
-app db = logStdoutDev . cors mycors $ serve Api.api (server db)
+app db = logStdoutDev . static . cors mycors $ serve Api.api (server db)
+  where static = staticPolicy $ only [("", "frontend.html")]
 
 main :: IO ()
 main = do db <- openDatabase

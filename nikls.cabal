@@ -25,6 +25,7 @@ executable nikls
                      , transformers
                      , wai
                      , wai-cors
+                     , wai-middleware-static
                      , wai-extra
                      , warp
   main-is:             Main.hs
