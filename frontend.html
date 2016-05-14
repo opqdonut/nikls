@@ -35,6 +35,7 @@ function formatTransaction(t) {
     var el = document.createElement("span");
     el.appendChild(formatTime(t.time))
     el.appendChild(space());
+    t.balances.sort(function(a, b) { return b.balance - a.balance; });
     t.balances.forEach(function(b) {
 	el.appendChild(formatBalance(b));
 	el.appendChild(space());
