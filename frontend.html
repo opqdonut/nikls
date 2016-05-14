@@ -11,20 +11,21 @@ var acceptJson = new Headers({"Accept": "application/json"});
 var sendJson = new Headers({"Content-Type": "application/json"});
 var getOpts = {method: "GET", headers: acceptJson};
 
+function formatBalance(b) {
+    return b.account + ":" + b.balance;
+}
 
 function formatTransaction(t) {
-    var desc = t.time;
+    var desc = t.time + " " + t.description;
     t.balances.forEach(function(b) {
-	desc += "  " + b.account + ":" + b.balance;
+	desc += " "+formatBalance(b);
     });
     return desc;
 }
 
 function update() {
     fetch(backend+'transaction', getOpts)
-    .then(function(r) {
-	return r.json();
-    })
+    .then(function(r) { return r.json(); })
     .then(function(ts) {
 	var ul = document.getElementById("transactions");
 	while (ul.firstChild) {
@@ -34,6 +35,20 @@ function update() {
 	ts.forEach(function(t) {
 	    var li = document.createElement("li");
 	    li.appendChild(document.createTextNode(formatTransaction(t)));
+	    ul.appendChild(li);
+	});
+    });
+
+    fetch(backend+'balances', getOpts)
+    .then(function(r) { return r.json(); })
+    .then(function(bs) {
+	var ul = document.getElementById("balances");
+	while (ul.firstChild) {
+	    ul.removeChild(ul.firstChild);
+	}
+	bs.forEach(function(b) {
+	    var li = document.createElement("li");
+	    li.appendChild(document.createTextNode(formatBalance(b)));
 	    ul.appendChild(li);
 	});
     });
@@ -66,11 +81,15 @@ update()
 
 <body>
 
-  <h1>All transactions:</h1>
-  <ul id="transactions"></ul>
-  <h2>Add transaction</h1>
+  <h1>Add transaction</h1>
   <input id="add" /><button onclick="add()">Add</button>
   <p>Status: <span id="status"></span></p>
+
+  <h1>Balances:</h1>
+  <ul id="balances"></ul>
+
+  <h1>All transactions:</h1>
+  <ul id="transactions"></ul>
 
 </body>
 </html>
