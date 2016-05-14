@@ -12,11 +12,11 @@ var sendJson = new Headers({"Content-Type": "application/json"});
 var getOpts = {method: "GET", headers: acceptJson};
 
 function formatBalance(b) {
-    return b.account + ":" + b.balance;
+    return b.account + ":" + (b.balance/100.0);
 }
 
 function formatTransaction(t) {
-    var desc = t.time + " " + t.description;
+    var desc = new Date(t.time).toISOString() + " " + t.description;
     t.balances.forEach(function(b) {
 	desc += " "+formatBalance(b);
     });
