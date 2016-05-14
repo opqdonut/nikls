@@ -55,10 +55,38 @@ function update() {
 }
 
 function add() {
-    var data = document.getElementById("add").value;
+    // XXX move to backend?
+    var cents = Math.round(document.getElementById("sum").value*100);
+    console.log("cents", cents);
+    var description = document.getElementById("description").value;
+    var payer = document.getElementById("payer").value;
+    var shared = document.getElementById("shared").value.split(" ");
+
+    var part = Math.round(cents / shared.length);
+
+    balances = {}
+    balances[payer] = cents
+    shared.forEach(function(s) {
+	balances[s] = (balances[s] || 0) - part;
+	cents -= part;
+    });
+    // allocate the rest to an arbitrary person
+    balances[shared[0]] -= cents;
+
+    console.log("balances", balances);
+
+    transaction = {time: (new Date()).getTime(),
+		   description: description,
+		   balances: []}
+    Object.keys(balances).forEach(function(p) {
+	transaction.balances.push({account: p, balance: balances[p]});
+    });
+
+    console.log("transaction", transaction);
+
     fetch(backend+'transaction', {method: "POST",
 				  headers: sendJson,
-				  body: data})
+				  body: JSON.stringify(transaction)})
     .then(function(r) {
 	return r.text();
     })
@@ -82,7 +110,12 @@ update()
 <body>
 
   <h1>Add transaction</h1>
-  <input id="add" /><button onclick="add()">Add</button>
+  <input type="text" id="description" placeholder="Description" /> <br/>
+  <input type="number" id="sum" placeholder="0.0" /> Sum <br/>
+  <input type="text" id="payer" placeholder="name" /> Payer <br />
+  <input type="text" id="shared" placeholder="name1 name2 name3" />
+  Shared by <br />
+  <button onclick="add()">Add</button>
   <p>Status: <span id="status"></span></p>
 
   <h1>Balances:</h1>
