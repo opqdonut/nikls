@@ -2,6 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<link rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+      integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+      crossorigin="anonymous">
 <title>Nikls is kinda like scred</title>
 
 <script>
@@ -11,16 +15,33 @@ var acceptJson = new Headers({"Accept": "application/json"});
 var sendJson = new Headers({"Content-Type": "application/json"});
 var getOpts = {method: "GET", headers: acceptJson};
 
+function space() {
+    return document.createTextNode(" ");
+}
+
 function formatBalance(b) {
-    return b.account + ":" + (b.balance/100.0);
+    var el = document.createElement("span");
+    el.className = b.balance > 0 ? "label-success" : "label-danger";
+    el.className += " label";
+    el.textContent = b.account + " " + (b.balance/100.0);
+    return el;
+}
+
+function formatTime(t) {
+    return document.createTextNode(new Date(t).toISOString());
 }
 
 function formatTransaction(t) {
-    var desc = new Date(t.time).toISOString() + " " + t.description;
+    var el = document.createElement("span");
+    el.appendChild(formatTime(t.time))
+    el.appendChild(space());
     t.balances.forEach(function(b) {
-	desc += " "+formatBalance(b);
+	el.appendChild(formatBalance(b));
+	el.appendChild(space());
     });
-    return desc;
+    el.appendChild(document.createElement("br"));
+    el.appendChild(document.createTextNode(t.description));
+    return el;
 }
 
 function update() {
@@ -34,7 +55,7 @@ function update() {
 	console.log(ts);
 	ts.forEach(function(t) {
 	    var li = document.createElement("li");
-	    li.appendChild(document.createTextNode(formatTransaction(t)));
+	    li.appendChild(formatTransaction(t));
 	    ul.appendChild(li);
 	});
     });
@@ -48,7 +69,7 @@ function update() {
 	}
 	bs.forEach(function(b) {
 	    var li = document.createElement("li");
-	    li.appendChild(document.createTextNode(formatBalance(b)));
+	    li.appendChild(formatBalance(b));
 	    ul.appendChild(li);
 	});
     });
@@ -108,14 +129,14 @@ update()
 </head>
 
 <body>
-
+<div class="container">
   <h1>Add transaction</h1>
   <input type="text" id="description" placeholder="Description" /> <br/>
   <input type="number" id="sum" placeholder="0.0" /> Sum <br/>
   <input type="text" id="payer" placeholder="name" /> Payer <br />
   <input type="text" id="shared" placeholder="name1 name2 name3" />
   Shared by <br />
-  <button onclick="add()">Add</button>
+  <button onclick="add()" class="btn btn-primary">Add</button>
   <p>Status: <span id="status"></span></p>
 
   <h1>Balances:</h1>
@@ -123,6 +144,6 @@ update()
 
   <h1>All transactions:</h1>
   <ul id="transactions"></ul>
-
+</div>
 </body>
 </html>
