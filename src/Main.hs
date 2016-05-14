@@ -18,7 +18,9 @@ import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import qualified Data.Map.Strict as M
 
 server :: Database -> Server Api
-server db = account :<|> transaction :<|> addTransaction :<|> allTransactions
+server db = account :<|>
+            transaction :<|>
+            balances
   where account :: Account -> Handler Sum :<|> Handler [Transaction]
         account acc = balance acc :<|> transactionsFor acc
         balance :: Account -> Handler Sum
@@ -26,14 +28,19 @@ server db = account :<|> transaction :<|> addTransaction :<|> allTransactions
                          return $ balanceFor state acc
         transactionsFor :: Account -> Handler [Transaction]
         transactionsFor acc = filter (concerns acc) <$> databaseTransactions db
-        transaction :: Timestamp -> Handler Transaction
-        transaction ts =
+
+        transaction = getTransaction :<|> addTransaction :<|> allTransactions
+        getTransaction :: Timestamp -> Handler Transaction
+        getTransaction ts =
           head . filter (\t -> transactionTime t == ts) <$>
           databaseTransactions db
         addTransaction :: Transaction -> Handler String
         addTransaction t = "ok" <$ databaseAdd t db
         allTransactions :: Handler [Transaction]
         allTransactions = databaseTransactions db
+
+        balances :: Handler Balances
+        balances = databaseState db
 
 mycors :: Request -> Maybe CorsResourcePolicy
 -- allow Content-Type header:

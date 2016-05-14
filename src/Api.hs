@@ -23,7 +23,9 @@ type TransactionApi =
     :<|> ReqBody Content Transaction :> Post Content String
     :<|> Get Content [Transaction])
 
-type Api = "v0" :> (AccountApi :<|> TransactionApi)
+type BalancesApi = "balances" :> Get Content Balances
+
+type Api = "v0" :> (AccountApi :<|> TransactionApi :<|> BalancesApi)
 
 api :: Proxy Api
 api = Proxy
