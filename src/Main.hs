@@ -8,7 +8,9 @@ import Render
 import Db
 
 import Data.IORef
+import Data.String
 import Control.Applicative
+import Control.Monad
 import Servant
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -35,7 +37,11 @@ server db = account :<|>
           head . filter (\t -> transactionTime t == ts) <$>
           databaseTransactions db
         addTransaction :: Transaction -> Handler String
-        addTransaction t = "ok" <$ databaseAdd t db
+        addTransaction t = do
+          unless (transactionValid t) $
+            throwError err500 { errBody = fromString "Invalid transaction." }
+          databaseAdd t db
+          return "ok"
         allTransactions :: Handler [Transaction]
         allTransactions = databaseTransactions db
 
@@ -51,4 +57,5 @@ app db = logStdoutDev . cors mycors $ serve Api.api (server db)
 
 main :: IO ()
 main = do db <- openDatabase
+          putStrLn "Serving on 8081"
           run 8081 (app db)
