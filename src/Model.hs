@@ -47,3 +47,12 @@ concerns acc (Transaction _ _ bs) = balancesConcern acc bs
 
 summarize :: [Transaction] -> Balances
 summarize = mconcat . map transactionBalances
+
+-- XXX transactions don't represent shared expenses that well
+-- A paying 15 and sharing it with B and C will show up as
+-- A+10 B-5 C-5
+--
+-- consider storing some higher level representation that maps to
+-- balances
+--
+-- this would also help in moving logic out of the frontend
