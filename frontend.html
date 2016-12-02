@@ -33,6 +33,25 @@ function formatTime(t) {
     return document.createTextNode(new Date(t).toISOString());
 }
 
+function transactionAction(t, action) {
+    fetch(backend+'transaction/'+t.time+'/'+action, {method: "POST"})
+    .catch(function(err) {
+	console.log("ERROR", err);
+	document.getElementById("status").textContent = err;
+    })
+    .then(function(_) {
+	update();
+    });
+}
+
+function cancelLink(t) {
+    var a = document.createElement("a");
+    var action = t.cancelled ? "uncancel" : "cancel";
+    a.onclick = function() { transactionAction(t, action); };
+    a.textContent = action;
+    return a;
+}
+
 function formatTransaction(t) {
     var el = document.createElement(t.cancelled ? "s" : "span");
     el.appendChild(formatTime(t.time))
@@ -43,6 +62,8 @@ function formatTransaction(t) {
 	el.appendChild(formatBalance(b));
 	el.appendChild(space());
     });
+    el.appendChild(space());
+    el.appendChild(cancelLink(t));
     el.appendChild(document.createElement("br"));
     el.appendChild(document.createTextNode(t.description));
     return el;
