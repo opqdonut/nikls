@@ -175,6 +175,7 @@ function add() {
     .then(function(status) {
 	console.log("STATUS", status);
 	document.getElementById("status").textContent = status;
+	document.getElementById("addform").reset();
 	update();
     })
     .catch(function(err) {
@@ -194,34 +195,35 @@ update()
 <body>
 <div class="container">
   <h1>Add transaction</h1>
-  <form class="form-horizontal">
+  <form id="addform" class="form-horizontal" onsubmit="return add()">
     <div class="form-group">
       <div class="col-sm-12">
 	<label for="description" class="control-label">Description</label>
 	<input class="form-control" type="text" id="description"
-	       placeholder="Description" />
+	       placeholder="Description" required />
       </div>
     </div>
     <div class="form-group">
       <div class="col-sm-2">
 	<label for="sum" class="control-label">Sum</label>
 	<input class="form-control" type="text" pattern="[0-9.]*" id="sum"
-	       placeholder="0.00" />
+	       placeholder="0.00" required />
       </div>
       <div class="col-sm-2">
 	<label for="payer" class="control-label">Payer</label>
 	<input class="form-control" type="text" id="payer"
-	       placeholder="name" />
+	       placeholder="name" required />
       </div>
       <div class="col-sm-8">
 	<label for="shared" class="control-label">Shared by</label>
 	<input class="form-control" type="text" id="shared"
-	       placeholder="name1 name2 name3"/>
+	       placeholder="name1 name2 name3" required />
       </div>
     </div>
     <div class="form-group">
       <div class="col-sm-12">
-	<button onclick="return add()" class="col-sm-12 btn btn-success btn-block">Add</button>
+	<input type="submit" value="Add"
+	       class="col-sm-12 btn btn-success btn-block" />
       </div>
     </div>
   </form>
