@@ -46,8 +46,8 @@ server db = account :<|>
         transaction :: Timestamp -> Handler String :<|> Handler String :<|> Handler Transaction
         transaction ts =
           setTransactionCancelled True ts :<|> setTransactionCancelled False ts :<|> getTransaction ts
-          
-                       
+
+
         setTransactionCancelled :: Bool -> Timestamp -> Handler String
         setTransactionCancelled bool ts = do
           t <- getTransaction ts
@@ -79,5 +79,4 @@ app db = logStdoutDev . static . cors mycors $ serve Api.api (server db)
 
 main :: IO ()
 main = do db <- openDatabase
-          putStrLn "Serving on 8081"
-          run 8081 (app db)
+          runEnv 8081 (app db)
