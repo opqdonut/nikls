@@ -41,12 +41,13 @@ newtype Timestamp = Timestamp { unTimestamp :: Word64 }
 data Transaction =
   Transaction {transactionTime :: Timestamp,
                transactionDescription :: String,
+               transactionCancelled :: Bool,
                transactionPositive :: Balances,
                transactionNegative :: Balances}
   deriving (Show, Read)
 
 transactionBalances :: Transaction -> Balances
-transactionBalances (Transaction _ _ pos neg) = mappend pos neg
+transactionBalances (Transaction _ _ _ pos neg) = mappend pos neg
 
 transactionValid :: Transaction -> Bool
 transactionValid = balancesValid . transactionBalances

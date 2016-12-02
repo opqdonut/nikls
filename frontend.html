@@ -34,7 +34,7 @@ function formatTime(t) {
 }
 
 function formatTransaction(t) {
-    var el = document.createElement("span");
+    var el = document.createElement(t.cancelled ? "s" : "span");
     el.appendChild(formatTime(t.time))
     el.appendChild(space());
     var balances = t.positive.concat(t.negative);
@@ -110,6 +110,7 @@ function add() {
 
     var transaction = {time: (new Date()).getTime(),
 		       description: description,
+		       cancelled: false,
 		       positive: serializeBalances(positive),
 		       negative: serializeBalances(negative)}
     

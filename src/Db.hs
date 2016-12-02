@@ -9,6 +9,7 @@ import Data.Aeson (encode, decode)
 import Data.String
 import Control.Monad.IO.Class
 import Database.SQLite.Simple
+import Database.SQLite.Simple.ToField
 
 instance FromRow Transaction where
   -- XXX handle parse failures
@@ -17,8 +18,11 @@ instance FromRow Transaction where
                let Just t = decode json
                return t
 
-instance ToRow Transaction where
-  toRow t = toRow (unTimestamp $ transactionTime t, encode t)
+instance ToField Transaction where
+  toField = toField . encode
+
+instance ToField Timestamp where
+  toField = toField . unTimestamp
 
 dbPath :: String
 dbPath = "nikls.sqlite"
@@ -67,4 +71,10 @@ add :: Query
 add = fromString "insert into transactions (time, json) values (?,?)"
 
 databaseAdd :: MonadIO m => Transaction -> Database -> m ()
-databaseAdd t conn = liftIO $ execute conn add t
+databaseAdd t conn = liftIO $ execute conn add (transactionTime t, t)
+
+update :: Query
+update = fromString "update transactions set (time, json) = (?,?) where time = ?"
+
+databaseUpdate :: MonadIO m => Transaction -> Database -> m ()
+databaseUpdate t conn = liftIO $ execute conn update (transactionTime t, t, transactionTime t)
