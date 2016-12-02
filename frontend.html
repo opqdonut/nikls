@@ -15,7 +15,7 @@
 var backend = "/v0/";
 var acceptJson = new Headers({"Accept": "application/json"});
 var sendJson = new Headers({"Content-Type": "application/json"});
-var getOpts = {method: "GET", headers: acceptJson};
+var getOpts = {method: "GET", headers: acceptJson, credentials: "same-origin"};
 
 function space() {
     return document.createTextNode(" ");
@@ -34,7 +34,7 @@ function formatTime(t) {
 }
 
 function transactionAction(t, action) {
-    fetch(backend+'transaction/'+t.time+'/'+action, {method: "POST"})
+    fetch(backend+'transaction/'+t.time+'/'+action, {method: "POST", credentials: "same-origin"})
     .catch(function(err) {
 	console.log("ERROR", err);
 	document.getElementById("status").textContent = err;
@@ -117,7 +117,7 @@ function add() {
 
     var positive = {};
     positive[payer] = cents;
-    
+
     var part = Math.round(cents / shared.length);
     var negative = {};
     shared.forEach(function(s) {
@@ -134,10 +134,11 @@ function add() {
 		       cancelled: false,
 		       positive: serializeBalances(positive),
 		       negative: serializeBalances(negative)}
-    
+
     console.log("transaction", transaction);
 
     fetch(backend+'transaction', {method: "POST",
+				  credentials: "same-origin",
 				  headers: sendJson,
 				  body: JSON.stringify(transaction)})
     .then(function(r) {
