@@ -18,8 +18,8 @@ executable nikls
                      , aeson
                      , bytestring
                      , containers
-                     , servant == 0.7
-                     , servant-server == 0.7
+                     , servant == 0.8.1
+                     , servant-server == 0.8.1
                      , sqlite-simple
                      , text
                      , transformers
