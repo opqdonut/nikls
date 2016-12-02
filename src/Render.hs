@@ -71,15 +71,18 @@ instance FromJSON Timestamp where
   parseJSON _          = mzero
 
 instance ToJSON Transaction where
-  toJSON (Transaction time description balances) =
+  toJSON (Transaction time description positive negative) =
     object [T.pack "time" .= toJSON time,
             T.pack "description" .= toJSON description,
-            T.pack "balances" .= toJSON balances]
+            T.pack "positive" .= toJSON positive,
+            T.pack "negative" .= toJSON negative]
 
 instance FromJSON Transaction where
+  -- TODO: enforce positive/negative
   parseJSON (Object o) =
     do t <- o .: T.pack "time" >>= parseJSON
        descr <- o .: T.pack "description" >>= parseJSON
-       bs <- o .: T.pack "balances" >>= parseJSON
-       return $ Transaction t descr bs
+       pos <- o .: T.pack "positive" >>= parseJSON
+       neg <- o .: T.pack "negative" >>= parseJSON
+       return $ Transaction t descr pos neg
   parseJSON _          = mzero

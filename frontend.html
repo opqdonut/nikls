@@ -10,6 +10,8 @@
 
 <script>
 
+'use strict';
+
 var backend = "/v0/";
 var acceptJson = new Headers({"Accept": "application/json"});
 var sendJson = new Headers({"Content-Type": "application/json"});
@@ -35,8 +37,9 @@ function formatTransaction(t) {
     var el = document.createElement("span");
     el.appendChild(formatTime(t.time))
     el.appendChild(space());
-    t.balances.sort(function(a, b) { return b.balance - a.balance; });
-    t.balances.forEach(function(b) {
+    var balances = t.positive.concat(t.negative);
+    balances.sort(function(a, b) { return b.balance - a.balance; });
+    balances.forEach(function(b) {
 	el.appendChild(formatBalance(b));
 	el.appendChild(space());
     });
@@ -76,6 +79,12 @@ function update() {
     });
 }
 
+function serializeBalances(obj) {
+    return Object.keys(obj).map(function(k) {
+	return {account: k,
+		balance: obj[k]}});
+}
+
 function add() {
     // XXX move to backend?
     var cents = Math.round(document.getElementById("sum").value*100);
@@ -84,26 +93,25 @@ function add() {
     var payer = document.getElementById("payer").value;
     var shared = document.getElementById("shared").value.split(" ");
 
+    var positive = {};
+    positive[payer] = cents;
+    
     var part = Math.round(cents / shared.length);
-
-    balances = {}
-    balances[payer] = cents
+    var negative = {};
     shared.forEach(function(s) {
-	balances[s] = (balances[s] || 0) - part;
+	negative[s] = (negative[s] || 0) - part;
 	cents -= part;
     });
     // allocate the rest to an arbitrary person
-    balances[shared[0]] -= cents;
+    negative[shared[0]] -= cents;
 
-    console.log("balances", balances);
+    console.log("balances", positive, negative);
 
-    transaction = {time: (new Date()).getTime(),
-		   description: description,
-		   balances: []}
-    Object.keys(balances).forEach(function(p) {
-	transaction.balances.push({account: p, balance: balances[p]});
-    });
-
+    var transaction = {time: (new Date()).getTime(),
+		       description: description,
+		       positive: serializeBalances(positive),
+		       negative: serializeBalances(negative)}
+    
     console.log("transaction", transaction);
 
     fetch(backend+'transaction', {method: "POST",
