@@ -25,14 +25,24 @@ function space() {
 
 function formatBalance(b) {
     var el = document.createElement("span");
-    el.className = b.balance > 0 ? "label-success" : "label-danger";
+    el.className = b.balance >= 0 ? "label-success" : "label-danger";
     el.className += " label";
-    el.textContent = b.account + " " + (b.balance/100.0);
+    var amount = b.balance/100.0;
+    el.textContent = b.account + " " + (amount>0 ? "+" : "") + amount;
     return el;
 }
 
 function formatTime(t) {
-    return document.createTextNode(new Date(t).toISOString());
+    function pad(n) {
+	if (n<10) {
+	    return "0"+n;
+	}
+	return ""+n;
+    }
+    var d = new Date(t);
+    var str = d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) +
+	" " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+    return document.createTextNode(str);
 }
 
 function transactionAction(t, action) {
