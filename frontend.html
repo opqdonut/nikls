@@ -57,6 +57,7 @@ function update() {
 	    ul.removeChild(ul.firstChild);
 	}
 	console.log(ts);
+	ts.reverse();
 	ts.forEach(function(t) {
 	    var li = document.createElement("li");
 	    li.appendChild(formatTransaction(t));
@@ -140,12 +141,38 @@ update()
 <body>
 <div class="container">
   <h1>Add transaction</h1>
-  <input type="text" id="description" placeholder="Description" /> <br/>
-  <input type="number" id="sum" placeholder="0.0" /> Sum <br/>
-  <input type="text" id="payer" placeholder="name" /> Payer <br />
-  <input type="text" id="shared" placeholder="name1 name2 name3" />
-  Shared by <br />
-  <button onclick="add()" class="btn btn-primary">Add</button>
+  <form class="form-horizontal">
+    <div class="form-group">
+      <div class="col-xs-12">
+	<label for="description" class="control-label">Description</label>
+	<input class="form-control" type="text" id="description"
+	       placeholder="Description" />
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-xs-2">
+	<label for="sum" class="control-label">Sum</label>
+	<input class="form-control" type="text" pattern="[0-9.]*" id="sum"
+	       placeholder="0.00" />
+      </div>
+      <div class="col-xs-2">
+	<label for="payer" class="control-label">Payer</label>
+	<input class="form-control" type="text" id="payer"
+	       placeholder="name" />
+      </div>
+      <div class="col-xs-8">
+	<label for="shared" class="control-label">Shared by</label>
+	<input class="form-control" type="text" id="shared"
+	       placeholder="name1 name2 name3"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-xs-12">
+	<button type="submit" onclick="add()" class="col-xs-12 btn
+		btn-success btn-block">Add</button>
+      </div>
+    </div>
+  </form>
   <p>Status: <span id="status"></span></p>
 
   <h1>Balances:</h1>
