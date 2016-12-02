@@ -56,5 +56,5 @@ concerns :: Account -> Transaction -> Bool
 concerns acc = balancesConcern acc . transactionBalances
 
 summarize :: [Transaction] -> Balances
-summarize = mconcat . map transactionBalances
+summarize = mconcat . map transactionBalances . filter (not . transactionCancelled)
 
