@@ -102,15 +102,14 @@ function update() {
     fetch(backend+'balances', getOpts)
     .then(function(r) { return r.json(); })
     .then(function(bs) {
-	var ul = document.getElementById("balances");
-	while (ul.firstChild) {
-	    ul.removeChild(ul.firstChild);
+	var balances = document.getElementById("balances");
+	while (balances.firstChild) {
+	    balances.removeChild(balances.firstChild);
 	}
 	accountNames = bs.map(function(b) { return b.account; });
 	bs.forEach(function(b) {
-	    var li = document.createElement("li");
-	    li.appendChild(formatBalance(b));
-	    ul.appendChild(li);
+	    balances.appendChild(formatBalance(b));
+	    balances.appendChild(space());
 	});
     });
 }
@@ -194,7 +193,7 @@ update()
 
 <body>
 <div class="container">
-  <h1>Add transaction</h1>
+  <h1>Nikls</h1>
   <form id="addform" class="form-horizontal" onsubmit="return add()">
     <div class="form-group">
       <div class="col-sm-12">
@@ -229,10 +228,10 @@ update()
   </form>
   <p>Status: <span id="status"></span></p>
 
-  <h1>Balances:</h1>
-  <ul id="balances"></ul>
+  <h3>Balances</h3>
+  <p id="balances"></p>
 
-  <h1>All transactions:</h1>
+  <h3>Transactions</h3>
   <ul id="transactions"></ul>
 </div>
 </body>
