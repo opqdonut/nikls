@@ -20,9 +20,18 @@ import Network.Wai.Middleware.Static (staticPolicy, only)
 
 import qualified Data.Map.Strict as M
 
+notFound :: Handler a
+notFound = throwError err404 { errBody = fromString "Transaction not found"}
+
+invalid :: Handler a
+invalid = throwError err500 { errBody = fromString "Invalid transaction." }
+
+ok :: Handler String
+ok = return "ok"
+
 server :: Database -> Server Api
 server db = account :<|>
-            transaction :<|>
+            transactions :<|>
             balances
   where account :: Account -> Handler Sum :<|> Handler [Transaction]
         account acc = balance acc :<|> transactionsFor acc
@@ -32,17 +41,28 @@ server db = account :<|>
         transactionsFor :: Account -> Handler [Transaction]
         transactionsFor acc = filter (concerns acc) <$> databaseTransactions db
 
-        transaction = getTransaction :<|> addTransaction :<|> allTransactions
+        transactions = transaction :<|> addTransaction :<|> allTransactions
+
+        transaction :: Timestamp -> Handler String :<|> Handler String :<|> Handler Transaction
+        transaction ts =
+          setTransactionCancelled True ts :<|> setTransactionCancelled False ts :<|> getTransaction ts
+          
+                       
+        setTransactionCancelled :: Bool -> Timestamp -> Handler String
+        setTransactionCancelled bool ts = do
+          t <- getTransaction ts
+          databaseUpdate db t {transactionCancelled = bool}
+          ok
         getTransaction :: Timestamp -> Handler Transaction
-        getTransaction ts =
-          head . filter (\t -> transactionTime t == ts) <$>
-          databaseTransactions db
+        getTransaction ts = do
+          res <- databaseGetTransaction db ts
+          case res of Nothing -> notFound
+                      Just t -> return t
         addTransaction :: Transaction -> Handler String
         addTransaction t = do
-          unless (transactionValid t) $
-            throwError err500 { errBody = fromString "Invalid transaction." }
-          databaseAdd t db
-          return "ok"
+          unless (transactionValid t) invalid
+          databaseAdd db t
+          ok
         allTransactions :: Handler [Transaction]
         allTransactions = databaseTransactions db
 

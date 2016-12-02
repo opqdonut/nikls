@@ -6,6 +6,7 @@ import Model
 import Render
 
 import Data.Aeson (encode, decode)
+import Data.Maybe (listToMaybe)
 import Data.String
 import Control.Monad.IO.Class
 import Database.SQLite.Simple
@@ -64,17 +65,24 @@ getAll = fromString "select * from transactions"
 databaseTransactions :: MonadIO m => Database -> m [Transaction]
 databaseTransactions conn = liftIO $ query_ conn getAll
 
+get :: Query
+get = fromString "select * from transactions where time = ?"
+
+databaseGetTransaction :: MonadIO m => Database -> Timestamp -> m (Maybe Transaction)
+databaseGetTransaction db time = listToMaybe <$> liftIO (query db get [time])
+
 databaseState :: MonadIO m => Database -> m Balances
 databaseState = fmap summarize . databaseTransactions
 
 add :: Query
 add = fromString "insert into transactions (time, json) values (?,?)"
 
-databaseAdd :: MonadIO m => Transaction -> Database -> m ()
-databaseAdd t conn = liftIO $ execute conn add (transactionTime t, t)
+databaseAdd :: MonadIO m => Database -> Transaction -> m ()
+databaseAdd conn t = liftIO $ execute conn add (transactionTime t, t)
 
 update :: Query
 update = fromString "update transactions set (time, json) = (?,?) where time = ?"
 
-databaseUpdate :: MonadIO m => Transaction -> Database -> m ()
-databaseUpdate t conn = liftIO $ execute conn update (transactionTime t, t, transactionTime t)
+databaseUpdate :: MonadIO m => Database -> Transaction -> m ()
+databaseUpdate conn t = liftIO $ execute conn update (transactionTime t, t, transactionTime t)
+

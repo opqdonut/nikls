@@ -18,8 +18,10 @@ type AccountApi =
      :<|> "transactions" :> Get Content [Transaction])
 
 type TransactionApi =
-  "transaction" :> (
-    Capture "timestamp" Timestamp :> Get Content Transaction
+  "transaction" :>
+  ((Capture "timestamp" Timestamp :> ("cancel" :> Post Content String
+                                      :<|> "uncancel" :> Post Content String
+                                      :<|> Get Content Transaction))
     :<|> ReqBody Content Transaction :> Post Content String
     :<|> Get Content [Transaction])
 
