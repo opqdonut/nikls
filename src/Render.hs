@@ -14,7 +14,8 @@ import Control.Applicative
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as BS
 import Text.Read (readEither)
-import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), (.=), (.:), object, encode)
+import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), Object, (.=), (.:), object, encode)
+import Data.Aeson.Types (Parser)
 import qualified Data.Map.Strict as M
 
 -- parsing url frangments
@@ -26,6 +27,9 @@ instance FromHttpApiData Timestamp where
   parseUrlPiece t = Timestamp <$> parseUrlPiece t
 
 -- parsing & rendering json
+
+extract :: FromJSON a => Object -> String -> Parser a
+extract o f = o .: T.pack f >>= parseJSON
 
 -- XXX implement ToJSON.toEncoding for better performance
 
@@ -55,8 +59,8 @@ instance FromJSON Balances where
     parseJSON arr >>= mapM parsePair >>= return . Balances . M.fromList
     where
       parsePair (Object o) =
-        do a <- o .: T.pack "account" >>= parseJSON
-           b <- o .: T.pack "balance" >>= parseJSON
+        do a <- extract o "account"
+           b <- extract o "balance"
            return (a,b)
       parsePair _          = mzero
   parseJSON _           = mzero
@@ -81,10 +85,10 @@ instance ToJSON Transaction where
 instance FromJSON Transaction where
   -- TODO: enforce positive/negative
   parseJSON (Object o) =
-    do t <- o .: T.pack "time" >>= parseJSON
-       descr <- o .: T.pack "description" >>= parseJSON
-       cancelled <- o .: T.pack "cancelled" >>= parseJSON
-       pos <- o .: T.pack "positive" >>= parseJSON
-       neg <- o .: T.pack "negative" >>= parseJSON
+    do t <- extract o "time"
+       descr <- extract o "description"
+       cancelled <- extract o "cancelled"
+       pos <- extract o "positive"
+       neg <- extract o "negative"
        return $ Transaction t descr cancelled pos neg
   parseJSON _          = mzero
