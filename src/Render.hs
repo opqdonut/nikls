@@ -92,3 +92,13 @@ instance FromJSON Transaction where
        neg <- extract o "negative"
        return $ Transaction t descr cancelled pos neg
   parseJSON _          = mzero
+
+instance FromJSON SimpleTransaction where
+  parseJSON (Object o) =
+    do t <- extract o "time"
+       descr <- extract o "description"
+       s <- extract o "sum"
+       payers <- extract o "payers"
+       sharedBy <- extract o "shared_by"
+       return $ SimpleTransaction t descr s payers sharedBy
+  parseJSON _ = mzero

@@ -76,6 +76,7 @@ data SimpleTransaction =
                       simpleTransactionSum :: Sum,
                       simpleTransactionPayers :: [Account],
                       simpleTransactionSharedBy :: [Account] }
+  deriving (Read, Show)
 
 makeTransaction :: SimpleTransaction -> Transaction
 makeTransaction s = Transaction {
