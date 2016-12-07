@@ -10,6 +10,9 @@ instance Monoid Sum where
   mempty = Sum 0
   mappend (Sum a) (Sum b) = Sum (a+b)
 
+inverse :: Sum -> Sum
+inverse (Sum s) = Sum (negate s)
+
 newtype Account = Account { accountName :: String }
                 deriving (Show, Read, Eq, Ord)
 
@@ -58,3 +61,27 @@ concerns acc = balancesConcern acc . transactionBalances
 summarize :: [Transaction] -> Balances
 summarize = mconcat . map transactionBalances . filter (not . transactionCancelled)
 
+----- Creating transactions -----
+
+(///) :: Sum -> [Account] -> Balances
+(Sum s) /// as = fair `mappend` fixup
+  where n = length as
+        (part,remainder) = divMod s n
+        fair = Balances . M.fromList $ zip as (repeat (Sum part))
+        fixup = Balances $ M.singleton (head as) (Sum remainder)
+
+data SimpleTransaction =
+  SimpleTransaction { simpleTransactionTime :: Timestamp,
+                      simpleTransactionDescription :: String,
+                      simpleTransactionSum :: Sum,
+                      simpleTransactionPayers :: [Account],
+                      simpleTransactionSharedBy :: [Account] }
+
+makeTransaction :: SimpleTransaction -> Transaction
+makeTransaction s = Transaction {
+  transactionTime = simpleTransactionTime s,
+  transactionDescription = simpleTransactionDescription s,
+  transactionCancelled = False,
+  transactionPositive = simpleTransactionSum s /// simpleTransactionPayers s,
+  transactionNegative = inverse (simpleTransactionSum s)
+                        /// simpleTransactionSharedBy s}
