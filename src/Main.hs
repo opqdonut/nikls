@@ -58,8 +58,9 @@ server db = account :<|>
           res <- databaseGetTransaction db ts
           case res of Nothing -> notFound
                       Just t -> return t
-        addTransaction :: Transaction -> Handler String
-        addTransaction t = do
+        addTransaction :: SimpleTransaction -> Handler String
+        addTransaction st = do
+          let t = makeTransaction st
           unless (transactionValid t) invalid
           databaseAdd db t
           ok

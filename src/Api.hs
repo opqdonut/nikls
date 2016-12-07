@@ -22,7 +22,7 @@ type TransactionApi =
   ((Capture "timestamp" Timestamp :> ("cancel" :> Post Content String
                                       :<|> "uncancel" :> Post Content String
                                       :<|> Get Content Transaction))
-    :<|> ReqBody Content Transaction :> Post Content String
+    :<|> ReqBody Content SimpleTransaction :> Post Content String
     :<|> Get Content [Transaction])
 
 type BalancesApi = "balances" :> Get Content Balances

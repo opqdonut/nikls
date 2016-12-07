@@ -36,7 +36,7 @@ function formatBalance(b) {
 function formatTime(t) {
     function pad(n) {
 	if (n<10) {
-	    return "0"+n;
+            return "0"+n;
 	}
 	return ""+n;
     }
@@ -88,14 +88,14 @@ function update() {
     .then(function(ts) {
 	var ul = document.getElementById("transactions");
 	while (ul.firstChild) {
-	    ul.removeChild(ul.firstChild);
+            ul.removeChild(ul.firstChild);
 	}
 	console.log(ts);
 	ts.reverse();
 	ts.forEach(function(t) {
-	    var li = document.createElement("li");
-	    li.appendChild(formatTransaction(t));
-	    ul.appendChild(li);
+            var li = document.createElement("li");
+            li.appendChild(formatTransaction(t));
+            ul.appendChild(li);
 	});
     });
 
@@ -104,12 +104,12 @@ function update() {
     .then(function(bs) {
 	var balances = document.getElementById("balances");
 	while (balances.firstChild) {
-	    balances.removeChild(balances.firstChild);
+            balances.removeChild(balances.firstChild);
 	}
 	accountNames = bs.map(function(b) { return b.account; });
 	bs.forEach(function(b) {
-	    balances.appendChild(formatBalance(b));
-	    balances.appendChild(space());
+            balances.appendChild(formatBalance(b));
+            balances.appendChild(space());
 	});
     });
 }
@@ -121,7 +121,7 @@ function verifyAccounts(accounts) {
 	return true;
     }
     return confirm("Unknown users: "+unknown+"\n"+
-		   "Do you want to create them?");
+                   "Do you want to create them?");
 }
 
 function serializeBalances(obj) {
@@ -131,9 +131,7 @@ function serializeBalances(obj) {
 }
 
 function add() {
-    // XXX move to backend?
     var cents = Math.round(document.getElementById("sum").value*100);
-    console.log("cents", cents);
     var description = document.getElementById("description").value;
     var payer = document.getElementById("payer").value;
     var shared = document.getElementById("shared").value.split(" ");
@@ -142,32 +140,18 @@ function add() {
 	return false;
     }
 
-    var positive = {};
-    positive[payer] = cents;
-
-    var part = Math.round(cents / shared.length);
-    var negative = {};
-    shared.forEach(function(s) {
-	negative[s] = (negative[s] || 0) - part;
-	cents -= part;
-    });
-    // allocate the rest to an arbitrary person
-    negative[shared[0]] -= cents;
-
-    console.log("balances", positive, negative);
-
     var transaction = {time: (new Date()).getTime(),
-		       description: description,
-		       cancelled: false,
-		       positive: serializeBalances(positive),
-		       negative: serializeBalances(negative)}
+                       description: description,
+                       sum: cents,
+                       payers: [payer],
+                       shared_by: shared}
 
     console.log("transaction", transaction);
 
     fetch(backend+'transaction', {method: "POST",
-				  credentials: "same-origin",
-				  headers: sendJson,
-				  body: JSON.stringify(transaction)})
+                                  credentials: "same-origin",
+                                  headers: sendJson,
+                                  body: JSON.stringify(transaction)})
     .then(function(r) {
 	return r.text();
     })
@@ -199,30 +183,30 @@ update()
       <div class="col-sm-12">
 	<label for="description" class="control-label">Description</label>
 	<input class="form-control" type="text" id="description"
-	       placeholder="Description" required />
+               placeholder="Description" required />
       </div>
     </div>
     <div class="form-group">
       <div class="col-sm-2">
 	<label for="sum" class="control-label">Sum</label>
 	<input class="form-control" type="text" pattern="[0-9.]*" id="sum"
-	       placeholder="0.00" required />
+               placeholder="0.00" required />
       </div>
       <div class="col-sm-2">
 	<label for="payer" class="control-label">Payer</label>
 	<input class="form-control" type="text" id="payer"
-	       placeholder="name" required />
+               placeholder="name" required />
       </div>
       <div class="col-sm-8">
 	<label for="shared" class="control-label">Shared by</label>
 	<input class="form-control" type="text" id="shared"
-	       placeholder="name1 name2 name3" required />
+               placeholder="name1 name2 name3" required />
       </div>
     </div>
     <div class="form-group">
       <div class="col-sm-12">
 	<input type="submit" value="Add"
-	       class="col-sm-12 btn btn-success btn-block" />
+               class="col-sm-12 btn btn-success btn-block" />
       </div>
     </div>
   </form>
