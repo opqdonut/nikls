@@ -1,11 +1,11 @@
 module Main where
 
 import Test.QuickCheck
-import System.Exit
+import Test.Framework
+import Test.Framework.Providers.QuickCheck2
 
-main = do
-  r <- quickCheckResult True
-  case r of
-    Success{} -> putStrLn "OK"
-    _ -> putStrLn "FAIL" >> exitFailure
+prop_True = True
 
+tests = [ testProperty "True" prop_True ]
+
+main = defaultMain tests
