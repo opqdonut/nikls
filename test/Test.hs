@@ -45,12 +45,22 @@ prop_div_total sum (NonEmpty accounts') = mconcat sums == sum
   where sums = M.elems $ unBalances $ sum /// accounts
         accounts = nub accounts'
 
+prop_div_fair :: Sum -> NonEmptyList Account -> Bool
+prop_div_fair sum (NonEmpty accounts') = maxSum <= minSum + 1
+  where sums = map sumCents . M.elems . unBalances $ sum /// accounts
+        minSum = minimum sums
+        maxSum = maximum sums
+        accounts = nub accounts'
+        
+  
+
 -- Running --
 
 tests = [ testProperty "Sum_Monoid" prop_Sum_Monoid
         , testProperty "Balances_Monoid" prop_Balances_Monoid
         , testProperty "balanceFor" prop_balanceFor
         , testProperty "div_names" prop_div_names
-        , testProperty "div_total" prop_div_total ]
+        , testProperty "div_total" prop_div_total
+        , testProperty "div_fair" prop_div_fair ]
 
 main = defaultMain tests
