@@ -71,7 +71,7 @@ summarize = mconcat . map transactionBalances . filter (not . transactionCancell
   where n = length as
         (part,remainder) = divMod s n
         fair = Balances . M.fromList $ zip as (repeat (Sum part))
-        fixup = Balances $ M.singleton (head as) (Sum remainder)
+        fixup = Balances . M.fromList $ zip as (replicate remainder (Sum 1))
 
 data SimpleTransaction =
   SimpleTransaction { simpleTransactionTime :: Timestamp,
