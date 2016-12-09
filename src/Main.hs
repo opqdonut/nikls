@@ -37,7 +37,7 @@ server db = account :<|>
         account acc = balance acc :<|> transactionsFor acc
         balance :: Account -> Handler Sum
         balance acc = do state <- databaseState db
-                         return $ balanceFor state acc
+                         return $ balanceFor acc state
         transactionsFor :: Account -> Handler [Transaction]
         transactionsFor acc = filter (concerns acc) <$> databaseTransactions db
 

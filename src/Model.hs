@@ -29,9 +29,11 @@ balancesValid (Balances b) = mconcat (M.elems b) == mempty
 balancesConcern :: Account -> Balances -> Bool
 balancesConcern acc (Balances b) = M.member acc b
 
--- XXX unsafe
-balanceFor :: Balances -> Account -> Sum
-balanceFor (Balances b) acc = b M.! acc
+balancesAccounts :: Balances -> [Account]
+balancesAccounts (Balances b) = M.keys b
+
+balanceFor :: Account -> Balances -> Sum
+balanceFor acc (Balances b) = M.findWithDefault mempty acc b
 
 newtype Timestamp = Timestamp { unTimestamp :: Word64 }
                     deriving (Show, Read, Eq, Ord)
@@ -63,6 +65,7 @@ summarize = mconcat . map transactionBalances . filter (not . transactionCancell
 
 ----- Creating transactions -----
 
+-- XXX as must be nonempty, elements must be unique
 (///) :: Sum -> [Account] -> Balances
 (Sum s) /// as = fair `mappend` fixup
   where n = length as
