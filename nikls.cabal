@@ -30,3 +30,9 @@ executable nikls
                      , warp
   main-is:             Main.hs
   other-modules:       Model Api Render Db
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  build-depends: QuickCheck, base
+  hs-source-dirs: test
