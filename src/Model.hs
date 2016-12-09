@@ -23,8 +23,11 @@ instance Monoid Balances where
   mempty = Balances M.empty
   mappend (Balances a) (Balances b) = Balances $ M.unionWith mappend a b
 
+balancesTotal :: Balances -> Sum
+balancesTotal (Balances b) = mconcat $ M.elems b
+
 balancesValid :: Balances -> Bool
-balancesValid (Balances b) = mconcat (M.elems b) == mempty
+balancesValid = (== mempty) . balancesTotal
 
 balancesConcern :: Account -> Balances -> Bool
 balancesConcern acc (Balances b) = M.member acc b
