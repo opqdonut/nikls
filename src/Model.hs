@@ -17,7 +17,7 @@ newtype Account = Account { accountName :: String }
                 deriving (Show, Read, Eq, Ord)
 
 newtype Balances = Balances { unBalances :: (M.Map Account Sum) }
-                 deriving (Show, Read)
+                 deriving (Show, Read, Eq)
 
 instance Monoid Balances where
   mempty = Balances M.empty

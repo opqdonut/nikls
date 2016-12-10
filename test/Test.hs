@@ -6,23 +6,40 @@ import Model
 
 import Data.List
 import Test.QuickCheck
-import Test.QuickCheck.Property.Common
-import Test.QuickCheck.Property.Monoid
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 
 import qualified Data.Map.Strict as M
 
+-- Utilities --
+
+sameElements :: Ord a => [a] -> [a] -> Bool
+sameElements xs ys = sort xs == sort ys
+
 -- Model --
+
+monoid_mempty_left :: (Eq a, Monoid a) => a -> Bool
+monoid_mempty_left x = x == mappend mempty x
+
+monoid_mempty_right :: (Eq a, Monoid a) => a -> Bool
+monoid_mempty_right x = x == mappend x mempty
+
+monoid_associative :: (Eq a, Monoid a) => a -> a -> a -> Bool
+monoid_associative x y z = mappend x (mappend y z) == mappend (mappend x y) z
+
+monoid :: (Arbitrary a, Show a, Eq a, Monoid a) => a -> Property
+monoid x = monoid_mempty_left x .&&. monoid_mempty_right x .&&. monoid_associative x
 
 deriving instance Arbitrary Sum
 
-prop_Sum_Monoid = eq $ prop_Monoid (T :: T Sum)
+prop_Sum_monoid :: Sum -> Property
+prop_Sum_monoid = monoid
 
 deriving instance Arbitrary Account
 deriving instance Arbitrary Balances
 
-prop_Balances_Monoid = eq $ prop_Monoid (T :: T Sum)
+prop_Balances_monoid :: Balances -> Property
+prop_Balances_monoid = monoid
 
 forAllElements [] f = property True
 forAllElements xs f = forAll (elements xs) f
@@ -32,9 +49,6 @@ prop_balanceFor bs = forAllElements accounts $
     \a -> balanceFor a together == mconcat (map (balanceFor a) bs)
   where together = mconcat bs
         accounts = balancesAccounts together
-
-sameElements :: Ord a => [a] -> [a] -> Bool
-sameElements xs ys = sort xs == sort ys
 
 prop_div_names :: Sum -> NonEmptyList Account -> Bool
 prop_div_names sum (NonEmpty accounts') = balancesAccounts (sum /// accounts) `sameElements` accounts
@@ -86,11 +100,11 @@ prop_makeTransaction_sum = forAll genSimpleTransaction $ \st ->
      &&
      balancesTotal (transactionPositive t) == sum
 
-        
+
 -- Running --
 
-tests = [ testProperty "Sum_Monoid" prop_Sum_Monoid
-        , testProperty "Balances_Monoid" prop_Balances_Monoid
+tests = [ testProperty "Sum_monoid" prop_Sum_monoid
+        , testProperty "Balances_monoid" prop_Balances_monoid
         , testProperty "balanceFor" prop_balanceFor
         , testProperty "div_names" prop_div_names
         , testProperty "div_total" prop_div_total
