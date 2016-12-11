@@ -106,8 +106,7 @@ prop_makeTransaction_sum = forAll genSimpleTransaction $ \st ->
 
 -- Render --
 
--- XXX can't express type signature without adding aeson to test build-depends
---json_roundtrip :: (FromJSON a, ToJSON a) => a -> Bool
+json_roundtrip :: (Eq a, FromJSON a, ToJSON a) => a -> Bool
 json_roundtrip x = Right x == fromJSONString (toJSONString x)
 
 prop_Sum_roundtrip :: Sum -> Bool

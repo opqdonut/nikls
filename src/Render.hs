@@ -3,7 +3,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Render where
+module Render (Data.Aeson.ToJSON(..), Data.Aeson.FromJSON(..),
+               toJSONString, fromJSONString)
+  where
 
 import Model
 
