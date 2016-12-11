@@ -14,7 +14,10 @@ import Control.Applicative
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as BS
 import Text.Read (readEither)
-import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), Object, (.=), (.:), object, encode)
+import Data.Aeson (ToJSON(..), FromJSON(..),
+                   Value(..), Object,
+                   (.=), (.:), object,
+                   encode, eitherDecode)
 import Data.Aeson.Types (Parser)
 import qualified Data.Map.Strict as M
 
@@ -102,3 +105,11 @@ instance FromJSON SimpleTransaction where
        sharedBy <- extract o "shared_by"
        return $ SimpleTransaction t descr s payers sharedBy
   parseJSON _ = mzero
+
+-- re-exports for testing
+
+toJSONString :: ToJSON a => a -> String
+toJSONString = BS.unpack . encode
+
+fromJSONString :: FromJSON a => String -> Either String a
+fromJSONString = eitherDecode . BS.pack

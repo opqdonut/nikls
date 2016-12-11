@@ -3,6 +3,7 @@
 module Main where
 
 import Model
+import Render
 
 import Data.List
 import Test.QuickCheck
@@ -69,12 +70,15 @@ prop_div_fair sum (NonEmpty accounts') = maxSum <= minSum + 1
 genAccounts :: Gen [Account]
 genAccounts = fmap nub $ listOf1 arbitrary
 
+deriving instance Arbitrary Timestamp
+
 genSimpleTransaction :: Gen SimpleTransaction
 genSimpleTransaction = do
+  time <- arbitrary
   sum <- arbitrary
   payers <- genAccounts
   sharedBy <- genAccounts
-  return SimpleTransaction { simpleTransactionTime = Timestamp 0
+  return SimpleTransaction { simpleTransactionTime = time
                            , simpleTransactionDescription = ""
                            , simpleTransactionSum = sum
                            , simpleTransactionPayers = payers
@@ -100,18 +104,41 @@ prop_makeTransaction_sum = forAll genSimpleTransaction $ \st ->
      &&
      balancesTotal (transactionPositive t) == sum
 
+-- Render --
+
+-- XXX can't express type signature without adding aeson to test build-depends
+--json_roundtrip :: (FromJSON a, ToJSON a) => a -> Bool
+json_roundtrip x = Right x == fromJSONString (toJSONString x)
+
+prop_Sum_roundtrip :: Sum -> Bool
+prop_Sum_roundtrip = json_roundtrip
+
+prop_Account_roundtrip :: Account -> Bool
+prop_Account_roundtrip = json_roundtrip
+
+prop_Balances_roundtrip :: Balances -> Bool
+prop_Balances_roundtrip = json_roundtrip
+
+prop_Timestamp_roundtrip :: Timestamp -> Bool
+prop_Timestamp_roundtrip = json_roundtrip
 
 -- Running --
 
-tests = [ testProperty "Sum_monoid" prop_Sum_monoid
-        , testProperty "Balances_monoid" prop_Balances_monoid
-        , testProperty "balanceFor" prop_balanceFor
-        , testProperty "div_names" prop_div_names
-        , testProperty "div_total" prop_div_total
-        , testProperty "div_fair" prop_div_fair
-        , testProperty "makeTransaction_payers" prop_makeTransaction_payers
-        , testProperty "makeTransaction_sharedBy" prop_makeTransaction_sharedBy
-        , testProperty "makeTransaction_valid" prop_makeTransaction_valid
-        , testProperty "makeTransaction_sum" prop_makeTransaction_sum ]
+tests = [ testGroup "Model"
+          [ testProperty "Sum_monoid" prop_Sum_monoid
+          , testProperty "Balances_monoid" prop_Balances_monoid
+          , testProperty "balanceFor" prop_balanceFor
+          , testProperty "div_names" prop_div_names
+          , testProperty "div_total" prop_div_total
+          , testProperty "div_fair" prop_div_fair
+          , testProperty "makeTransaction_payers" prop_makeTransaction_payers
+          , testProperty "makeTransaction_sharedBy" prop_makeTransaction_sharedBy
+          , testProperty "makeTransaction_valid" prop_makeTransaction_valid
+          , testProperty "makeTransaction_sum" prop_makeTransaction_sum ]
+        , testGroup "Render"
+          [ testProperty "Sum_roundtrip" prop_Sum_roundtrip
+          , testProperty "Account_roundtrip" prop_Account_roundtrip
+          , testProperty "Balances_roundtrip" prop_Balances_roundtrip
+          , testProperty "Timestamp_roundtrip" prop_Timestamp_roundtrip ] ]
 
 main = defaultMain tests
