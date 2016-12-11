@@ -25,6 +25,16 @@ function space() {
 }
 
 function formatBalance(b) {
+    var el = document.createElement("button");
+    el.className = b.balance >= 0 ? "btn-success" : "btn-danger";
+    el.className += " btn";
+    el.onclick = function() { narrow(b.account) };
+    var amount = b.balance/100.0;
+    el.textContent = b.account + " " + (amount>0 ? "+" : "") + amount;
+    return el;
+}
+
+function formatBalanceSmall(b) {
     var el = document.createElement("span");
     el.className = b.balance >= 0 ? "label-success" : "label-danger";
     el.className += " label";
@@ -72,7 +82,7 @@ function formatTransaction(t) {
     var balances = t.positive.concat(t.negative);
     balances.sort(function(a, b) { return b.balance - a.balance; });
     balances.forEach(function(b) {
-	el.appendChild(formatBalance(b));
+	el.appendChild(formatBalanceSmall(b));
 	el.appendChild(space());
     });
     el.appendChild(space());
@@ -82,10 +92,32 @@ function formatTransaction(t) {
     return el;
 }
 
+function narrow(user) {
+    window.location.hash=user;
+    update();
+}
+
 function update() {
-    fetch(backend+'transaction', getOpts)
+    var user = window.location.hash.substr(1);
+    var source;
+    if (user == '') {
+        source = backend+'transaction';
+    } else {
+        source = backend+'account/'+user+'/transactions';
+    }
+    console.log("source", source)
+
+    fetch(source, getOpts)
     .then(function(r) { return r.json(); })
     .then(function(ts) {
+        var title = document.getElementById("transactions-title");
+        if (user == '') {
+            title.innerHTML = "Transactions";
+        } else {
+            title.innerHTML = "Transactions for " + user +
+                ' <button onclick="narrow(\'\')" class="btn btn-primary btn-xs">Everybody</a>';
+            console.log(title.innerHTML);
+        }
 	var ul = document.getElementById("transactions");
 	while (ul.firstChild) {
             ul.removeChild(ul.firstChild);
@@ -215,7 +247,7 @@ update()
   <h3>Balances</h3>
   <p id="balances"></p>
 
-  <h3>Transactions</h3>
+  <h3 id="transactions-title">Transactions</h3>
   <ul id="transactions"></ul>
 </div>
 </body>
