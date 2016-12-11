@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeOperators #-}
 
-module Main where
+module Server where
 
 import Api
 import Model

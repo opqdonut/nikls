@@ -11,9 +11,7 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
-
-
-executable nikls
+library
   hs-source-dirs:      src
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
@@ -30,8 +28,13 @@ executable nikls
                      , wai-middleware-static
                      , wai-extra
                      , warp
+  exposed-modules:     Server Model Api Render Db
+
+executable nikls
+  hs-source-dirs:      app
   main-is:             Main.hs
-  other-modules:       Model Api Render Db
+  build-depends:       base >= 4.7 && < 5
+                     , nikls
 
 test-suite test
   type: exitcode-stdio-1.0
@@ -40,6 +43,7 @@ test-suite test
                      , base >= 4.7 && < 5
                      , test-framework
                      , test-framework-quickcheck2
+                     , nikls
                      , containers
-  hs-source-dirs:      src, test
+  hs-source-dirs:      test
   default-language:    Haskell2010
