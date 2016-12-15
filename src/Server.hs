@@ -33,26 +33,26 @@ server :: Database -> Server Api
 server db = account :<|>
             transactions :<|>
             balances
-  where account :: Account -> Handler Sum :<|> Handler [Transaction]
-        account acc = balance acc :<|> transactionsFor acc
+  where account :: Server AccountApi
+        account = balance :<|> transactionsFor
+
         balance :: Account -> Handler Sum
         balance acc = do state <- databaseState db
                          return $ balanceFor acc state
         transactionsFor :: Account -> Handler [Transaction]
         transactionsFor acc = filter (concerns acc) <$> databaseTransactions db
 
-        transactions = transaction :<|> addTransaction :<|> allTransactions
-
-        transaction :: Timestamp -> Handler String :<|> Handler String :<|> Handler Transaction
-        transaction ts =
-          setTransactionCancelled True ts :<|> setTransactionCancelled False ts :<|> getTransaction ts
-
+        transactions :: Server TransactionApi
+        transactions = cancel :<|> uncancel :<|>
+                       getTransaction :<|> allTransactions :<|> addTransaction
 
         setTransactionCancelled :: Bool -> Timestamp -> Handler String
         setTransactionCancelled bool ts = do
           t <- getTransaction ts
           databaseUpdate db t {transactionCancelled = bool}
           ok
+        cancel = setTransactionCancelled True
+        uncancel = setTransactionCancelled False
         getTransaction :: Timestamp -> Handler Transaction
         getTransaction ts = do
           res <- databaseGetTransaction db ts
