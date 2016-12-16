@@ -2,6 +2,7 @@ module Model where
 
 import qualified Data.Map.Strict as M
 import Data.Word
+import Data.Int
 
 newtype Sum = Sum { sumCents :: Int }
             deriving (Show, Read, Eq)
@@ -41,13 +42,17 @@ balanceFor acc (Balances b) = M.findWithDefault mempty acc b
 newtype Timestamp = Timestamp { unTimestamp :: Word64 }
                     deriving (Show, Read, Eq, Ord)
 
+data Id = New | Id Int64
+  deriving (Show, Read, Eq)
+
 -- A transaction has separate positive and negative balances so that
 -- we can properly represent a situation where A pays 15 and the
 -- benefit is split among A, B and C. Without separate positive and
 -- negative this would show up as A+10 B-5 C-5 and the original sum
 -- would be lost.
 data Transaction =
-  Transaction {transactionTime :: Timestamp,
+  Transaction {transactionId :: Id,
+               transactionTime :: Timestamp,
                transactionDescription :: String,
                transactionCancelled :: Bool,
                transactionPositive :: Balances,
@@ -55,7 +60,7 @@ data Transaction =
   deriving (Show, Read)
 
 transactionBalances :: Transaction -> Balances
-transactionBalances (Transaction _ _ _ pos neg) = mappend pos neg
+transactionBalances t = mappend (transactionPositive t) (transactionNegative t)
 
 transactionValid :: Transaction -> Bool
 transactionValid = balancesValid . transactionBalances
@@ -86,6 +91,7 @@ data SimpleTransaction =
 
 makeTransaction :: SimpleTransaction -> Transaction
 makeTransaction s = Transaction {
+  transactionId = New,
   transactionTime = simpleTransactionTime s,
   transactionDescription = simpleTransactionDescription s,
   transactionCancelled = False,

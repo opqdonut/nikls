@@ -57,7 +57,7 @@ function formatTime(t) {
 }
 
 function transactionAction(t, action) {
-    fetch(backend+'transaction/'+t.time+'/'+action, {method: "POST", credentials: "same-origin"})
+    fetch(backend+'transaction/'+t.id+'/'+action, {method: "POST", credentials: "same-origin"})
     .catch(function(err) {
 	console.log("ERROR", err);
 	document.getElementById("status").textContent = err;

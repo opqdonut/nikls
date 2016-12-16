@@ -2,6 +2,7 @@
 
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Render (Data.Aeson.ToJSON(..), Data.Aeson.FromJSON(..),
                toJSONString, fromJSONString)
@@ -20,13 +21,13 @@ import Data.Aeson (ToJSON(..), FromJSON(..),
 import Data.Aeson.Types (Parser)
 import qualified Data.Map.Strict as M
 
--- parsing url frangments
+-- parsing url fragments
 
 instance FromHttpApiData Account where
   parseUrlPiece t = return $ Account (T.unpack t)
 
-instance FromHttpApiData Timestamp where
-  parseUrlPiece t = Timestamp <$> parseUrlPiece t
+instance FromHttpApiData Id where
+  parseUrlPiece t = Id <$> parseUrlPiece t
 
 -- parsing & rendering json
 
@@ -51,10 +52,10 @@ instance FromJSON Account where
   parseJSON _          = mzero
 
 instance ToJSON Balances where
-  toJSON (Balances b) = toJSON pairs
+  toJSON (Balances bal) = toJSON pairs
     where pairs = [object [T.pack "account" .= toJSON a,
                            T.pack "balance" .= toJSON b]
-                  | (a,b) <- M.assocs b]
+                  | (a,b) <- M.assocs bal]
 
 instance FromJSON Balances where
   parseJSON arr@(Array _) =
@@ -76,9 +77,20 @@ instance FromJSON Timestamp where
   parseJSON (Number t) = return . Timestamp . round $ t
   parseJSON _          = mzero
 
+instance ToJSON Id where
+  toJSON New = toJSON "New"
+  toJSON (Id i) = toJSON i
+
+instance FromJSON Id where
+  -- XXX check integerness
+  parseJSON (Number i) = return . Id . round $ i
+  parseJSON (String s) = if (s == T.pack "New") then (return New) else mzero
+  parseJSON _          = mzero
+
 instance ToJSON Transaction where
-  toJSON (Transaction time description cancelled positive negative) =
-    object [T.pack "time" .= toJSON time,
+  toJSON (Transaction tid time description cancelled positive negative) =
+    object [T.pack "id" .= toJSON tid,
+            T.pack "time" .= toJSON time,
             T.pack "description" .= toJSON description,
             T.pack "cancelled" .= toJSON cancelled,
             T.pack "positive" .= toJSON positive,
@@ -87,12 +99,13 @@ instance ToJSON Transaction where
 instance FromJSON Transaction where
   -- TODO: enforce positive/negative
   parseJSON (Object o) =
-    do t <- extract o "time"
+    do tid <- extract o "id"
+       t <- extract o "time"
        descr <- extract o "description"
        cancelled <- extract o "cancelled"
        pos <- extract o "positive"
        neg <- extract o "negative"
-       return $ Transaction t descr cancelled pos neg
+       return $ Transaction tid t descr cancelled pos neg
   parseJSON _          = mzero
 
 instance FromJSON SimpleTransaction where

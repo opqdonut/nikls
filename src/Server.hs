@@ -36,16 +36,16 @@ serveAccount db = balance :<|> transactionsFor
 serveTransactions :: Database -> Server TransactionApi
 serveTransactions db = cancel :<|> uncancel :<|>
                        getTransaction :<|> allTransactions :<|> addTransaction
-  where setTransactionCancelled :: Bool -> Timestamp -> Handler String
-        setTransactionCancelled bool ts = do
-          t <- getTransaction ts
+  where setTransactionCancelled :: Bool -> Id -> Handler String
+        setTransactionCancelled bool i = do
+          t <- getTransaction i
           databaseUpdate db t {transactionCancelled = bool}
           ok
         cancel = setTransactionCancelled True
         uncancel = setTransactionCancelled False
-        getTransaction :: Timestamp -> Handler Transaction
-        getTransaction ts = do
-          res <- databaseGetTransaction db ts
+        getTransaction :: Id -> Handler Transaction
+        getTransaction i = do
+          res <- databaseGetTransaction db i
           case res of Nothing -> notFound
                       Just t -> return t
         addTransaction :: SimpleTransaction -> Handler String

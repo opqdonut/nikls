@@ -17,9 +17,9 @@ type AccountApi
   :<|> Capture "account" Account :> "transactions" :> Get Content [Transaction]
 
 type TransactionApi
-  =    Capture "timestamp" Timestamp :> "cancel" :> Post Content String
-  :<|> Capture "timestamp" Timestamp :> "uncancel" :> Post Content String
-  :<|> Capture "timestamp" Timestamp :> Get Content Transaction
+  =    Capture "id" Id :> "cancel" :> Post Content String
+  :<|> Capture "id" Id :> "uncancel" :> Post Content String
+  :<|> Capture "id" Id :> Get Content Transaction
   :<|> Get Content [Transaction]
   :<|> ReqBody Content SimpleTransaction :> Post Content String
 
