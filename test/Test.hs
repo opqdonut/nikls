@@ -76,32 +76,36 @@ genAccounts = fmap nub $ listOf1 arbitrary
 
 deriving instance Arbitrary Timestamp
 
-genSimpleTransaction :: Gen SimpleTransaction
-genSimpleTransaction = do
-  time <- arbitrary
-  s <- arbitrary
-  payers <- genAccounts
-  sharedBy <- genAccounts
-  return SimpleTransaction { simpleTransactionTime = time
-                           , simpleTransactionDescription = ""
-                           , simpleTransactionSum = s
-                           , simpleTransactionPayers = payers
-                           , simpleTransactionSharedBy = sharedBy }
+instance Arbitrary SimpleTransaction where
+  arbitrary = do
+    time <- arbitrary
+    s <- arbitrary
+    payers <- genAccounts
+    sharedBy <- genAccounts
+    return SimpleTransaction { simpleTransactionTime = time
+                             , simpleTransactionDescription = ""
+                             , simpleTransactionSum = s
+                             , simpleTransactionPayers = payers
+                             , simpleTransactionSharedBy = sharedBy }
 
-prop_makeTransaction_payers = forAll genSimpleTransaction $ \st ->
+prop_makeTransaction_payers :: SimpleTransaction -> Bool
+prop_makeTransaction_payers st =
   (balancesAccounts . transactionPositive $ makeTransaction st)
   `sameElements`
   simpleTransactionPayers st
 
-prop_makeTransaction_sharedBy = forAll genSimpleTransaction $ \st ->
+prop_makeTransaction_sharedBy :: SimpleTransaction -> Bool
+prop_makeTransaction_sharedBy st =
   (balancesAccounts . transactionNegative $ makeTransaction st)
   `sameElements`
   simpleTransactionSharedBy st
 
-prop_makeTransaction_valid = forAll genSimpleTransaction $ \st ->
+prop_makeTransaction_valid :: SimpleTransaction -> Bool
+prop_makeTransaction_valid st =
   transactionValid $ makeTransaction st
 
-prop_makeTransaction_sum = forAll genSimpleTransaction $ \st ->
+prop_makeTransaction_sum :: SimpleTransaction -> Bool
+prop_makeTransaction_sum st =
   let t = makeTransaction st
       s = simpleTransactionSum st
   in balancesTotal (transactionNegative t) == inverse s
@@ -121,6 +125,9 @@ instance Arbitrary Transaction where
     pos <- arbitrary
     neg <- arbitrary
     return $ Transaction i time desc cancelled pos neg
+  shrink t =
+    [ t {transactionPositive = p, transactionNegative = n}
+    | (p, n) <- shrink (transactionPositive t, transactionNegative t) ]
 
 -- Render --
 
@@ -139,12 +146,16 @@ prop_Balances_roundtrip = json_roundtrip
 prop_Timestamp_roundtrip :: Timestamp -> Bool
 prop_Timestamp_roundtrip = json_roundtrip
 
+prop_Transaction_roundtrip :: Transaction -> Bool
+prop_Transaction_roundtrip = json_roundtrip
+
 -- Db --
 
 test_db_add_get :: H.Assertion
 test_db_add_get =
   do db <- openDatabasePath ""
-     t <- generate arbitrary
+     t0 <- generate arbitrary
+     let t = t0 { transactionId = New }
      databaseAdd db t
      [t'] <- databaseTransactions db
      H.assertEqual "listed" t t' {transactionId = New}
