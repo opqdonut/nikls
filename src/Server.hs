@@ -9,6 +9,7 @@ import Db
 
 import Data.String
 import Control.Monad
+import System.Environment (lookupEnv)
 import Servant
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -74,5 +75,12 @@ app db = logStdoutDev . static . cors mycors $ serve Api.api (server db)
   where static = staticPolicy $ only [("", "frontend.html")]
 
 main :: IO ()
-main = do db <- openDatabase
-          runEnv 8081 (app db)
+main =
+  do db <- openDatabase
+     port <- maybe 8081 read <$> lookupEnv "PORT"
+     putStr "Running on "
+     print port
+
+     let settings =
+           setPort port $ setHost (fromString "127.0.0.1") $ defaultSettings
+     runSettings settings (app db)
