@@ -8,7 +8,7 @@ Usage
 
 Built using [stack](http://haskellstack.org):
 
-    stack build
+    stack build --test
     stack exec nikls
 
 Enjoy:
