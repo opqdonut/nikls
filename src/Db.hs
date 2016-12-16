@@ -10,6 +10,7 @@ import Data.Aeson (encode, decode)
 import Data.Int
 import Data.Maybe (listToMaybe)
 import Data.String
+import Data.List (sortOn)
 import Control.Monad
 import Control.Monad.IO.Class
 import Database.SQLite.Simple
@@ -73,7 +74,9 @@ getAll :: Query
 getAll = fromString "select json from transactions"
 
 databaseTransactions :: MonadIO m => Database -> m [Transaction]
-databaseTransactions conn = map fromOnly <$> liftIO (query_ conn getAll)
+-- XXX could index the time for ordering
+databaseTransactions conn =
+  sortOn transactionTime . map fromOnly <$> liftIO (query_ conn getAll)
 
 get :: Query
 get = fromString "select json from transactions where id = ?"
