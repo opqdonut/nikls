@@ -1,4 +1,5 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
+{-# OPTIONS_GHC -fno-warn-orphans -Wno-missing-signatures #-}
 
 module Main where
 
@@ -42,7 +43,7 @@ deriving instance Arbitrary Balances
 prop_Balances_monoid :: Balances -> Property
 prop_Balances_monoid = monoid
 
-forAllElements [] f = property True
+forAllElements [] _ = property True
 forAllElements xs f = forAll (elements xs) f
 
 prop_balanceFor :: [Balances] -> Property
@@ -52,17 +53,17 @@ prop_balanceFor bs = forAllElements accounts $
         accounts = balancesAccounts together
 
 prop_div_names :: Sum -> NonEmptyList Account -> Bool
-prop_div_names sum (NonEmpty accounts') = balancesAccounts (sum /// accounts) `sameElements` accounts
+prop_div_names s (NonEmpty accounts') = balancesAccounts (s /// accounts) `sameElements` accounts
   where accounts = nub accounts'
 
 prop_div_total :: Sum -> NonEmptyList Account -> Bool
-prop_div_total sum (NonEmpty accounts') = total == sum
-  where total = balancesTotal $ sum /// accounts
+prop_div_total s (NonEmpty accounts') = total == s
+  where total = balancesTotal $ s /// accounts
         accounts = nub accounts'
 
 prop_div_fair :: Sum -> NonEmptyList Account -> Bool
-prop_div_fair sum (NonEmpty accounts') = maxSum <= minSum + 1
-  where sums = map sumCents . M.elems . unBalances $ sum /// accounts
+prop_div_fair s (NonEmpty accounts') = maxSum <= minSum + 1
+  where sums = map sumCents . M.elems . unBalances $ s /// accounts
         minSum = minimum sums
         maxSum = maximum sums
         accounts = nub accounts'
@@ -75,12 +76,12 @@ deriving instance Arbitrary Timestamp
 genSimpleTransaction :: Gen SimpleTransaction
 genSimpleTransaction = do
   time <- arbitrary
-  sum <- arbitrary
+  s <- arbitrary
   payers <- genAccounts
   sharedBy <- genAccounts
   return SimpleTransaction { simpleTransactionTime = time
                            , simpleTransactionDescription = ""
-                           , simpleTransactionSum = sum
+                           , simpleTransactionSum = s
                            , simpleTransactionPayers = payers
                            , simpleTransactionSharedBy = sharedBy }
 
@@ -99,10 +100,10 @@ prop_makeTransaction_valid = forAll genSimpleTransaction $ \st ->
 
 prop_makeTransaction_sum = forAll genSimpleTransaction $ \st ->
   let t = makeTransaction st
-      sum = simpleTransactionSum st
-  in balancesTotal (transactionNegative t) == inverse sum
+      s = simpleTransactionSum st
+  in balancesTotal (transactionNegative t) == inverse s
      &&
-     balancesTotal (transactionPositive t) == sum
+     balancesTotal (transactionPositive t) == s
 
 -- Render --
 
