@@ -53,7 +53,7 @@ serveTransactions db = cancel :<|> uncancel :<|>
         addTransaction st = do
           let t = makeTransaction st
           unless (transactionValid t) invalid
-          databaseAdd db t
+          _ <- databaseAdd db t
           ok
         allTransactions :: Handler [Transaction]
         allTransactions = databaseTransactions db
