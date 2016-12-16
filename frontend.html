@@ -170,6 +170,10 @@ function add() {
     var time = document.getElementById("time").value;
     if (time != "") {
         time = Date.parse(time);
+        if (isNaN(time)) {
+            alert("Invalid time");
+            return false;
+        }
     } else {
         time = (new Date()).getTime();
     }
