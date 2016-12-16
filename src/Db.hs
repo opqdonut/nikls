@@ -1,9 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Db where
 
 import Model
-import Render
+import Render()
 
 import Data.Aeson (encode, decode)
 import Data.Maybe (listToMaybe)
@@ -85,4 +86,3 @@ update = fromString "update transactions set (time, json) = (?,?) where time = ?
 
 databaseUpdate :: MonadIO m => Database -> Transaction -> m ()
 databaseUpdate conn t = liftIO $ execute conn update (transactionTime t, t, transactionTime t)
-

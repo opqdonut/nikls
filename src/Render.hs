@@ -10,12 +10,9 @@ module Render (Data.Aeson.ToJSON(..), Data.Aeson.FromJSON(..),
 import Model
 
 import Control.Monad
-import Data.Proxy
 import Servant.API
-import Control.Applicative
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as BS
-import Text.Read (readEither)
 import Data.Aeson (ToJSON(..), FromJSON(..),
                    Value(..), Object,
                    (.=), (.:), object,
