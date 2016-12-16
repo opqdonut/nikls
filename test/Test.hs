@@ -7,6 +7,7 @@ import Model
 import Render
 import Db
 
+import Data.Either
 import Data.List
 import qualified Test.HUnit as H
 import Test.QuickCheck
@@ -149,6 +150,21 @@ prop_Timestamp_roundtrip = json_roundtrip
 prop_Transaction_roundtrip :: Transaction -> Bool
 prop_Transaction_roundtrip = json_roundtrip
 
+integer_parse_failures :: FromJSON a => a -> Bool
+integer_parse_failures val = parseFail "1.5" && parseFail "99999999999999999999"
+  where example = Right val
+        parse x = fromJSONString x `asTypeOf` example
+        parseFail x = isLeft $ parse x
+
+prop_Sum_integer :: Bool
+prop_Sum_integer = integer_parse_failures (Sum 0)
+
+prop_Timestamp_integer :: Bool
+prop_Timestamp_integer = integer_parse_failures (Timestamp 0)
+
+prop_Id_integer :: Bool
+prop_Id_integer = integer_parse_failures (Id 0)
+
 -- Db --
 
 generateNewTransaction :: IO Transaction
@@ -194,7 +210,11 @@ tests = [ testGroup "Model"
           [ testProperty "Sum_roundtrip" prop_Sum_roundtrip
           , testProperty "Account_roundtrip" prop_Account_roundtrip
           , testProperty "Balances_roundtrip" prop_Balances_roundtrip
-          , testProperty "Timestamp_roundtrip" prop_Timestamp_roundtrip ]
+          , testProperty "Timestamp_roundtrip" prop_Timestamp_roundtrip
+          , testProperty "Transaction_roundtrip" prop_Transaction_roundtrip
+          , testProperty "Sum_integer" prop_Sum_integer
+          , testProperty "timestamp_integer" prop_Timestamp_integer
+          , testProperty "Id_integer" prop_Id_integer ]
         , testGroup "Db"
           [ testCase "test_db_basic" test_db_basic
           , testCase "test_db_update" test_db_update ] ]

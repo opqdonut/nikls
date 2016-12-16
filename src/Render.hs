@@ -34,15 +34,26 @@ instance FromHttpApiData Id where
 extract :: FromJSON a => Object -> String -> Parser a
 extract o f = o .: T.pack f >>= parseJSON
 
+-- XXX they have something like this in aeson 1.0 but we're on 0.1
+parseInteger :: (Integral a, Bounded a) => Value -> Parser a
+parseInteger (Number n)
+  | n < minBack = fail "Too small"
+  | n > maxBack = fail "Too big"
+  | back /= n = fail "Not representable"
+  | otherwise = return result
+  where result = round n
+        back = fromIntegral result
+        minBack = fromIntegral (minBound `asTypeOf` result)
+        maxBack = fromIntegral (maxBound `asTypeOf` result)
+parseInteger _          = mzero
+
 -- XXX implement ToJSON.toEncoding for better performance
 
 instance ToJSON Sum where
   toJSON (Sum b) = Number (fromIntegral b)
 
 instance FromJSON Sum where
-  -- XXX check integerness
-  parseJSON (Number b) = return . Sum . round $ b
-  parseJSON _          = mzero
+  parseJSON s = Sum <$> parseInteger s
 
 instance ToJSON Account where
   toJSON (Account n) = String (T.pack n)
@@ -73,19 +84,15 @@ instance ToJSON Timestamp where
   toJSON (Timestamp t) = Number (fromIntegral t)
 
 instance FromJSON Timestamp where
-  -- XXX check integerness
-  parseJSON (Number t) = return . Timestamp . round $ t
-  parseJSON _          = mzero
+  parseJSON t = Timestamp <$> parseInteger t
 
 instance ToJSON Id where
   toJSON New = toJSON "New"
   toJSON (Id i) = toJSON i
 
 instance FromJSON Id where
-  -- XXX check integerness
-  parseJSON (Number i) = return . Id . round $ i
-  parseJSON (String s) = if (s == T.pack "New") then (return New) else mzero
-  parseJSON _          = mzero
+  parseJSON (String s)   = if s == T.pack "New" then return New else mzero
+  parseJSON i            = Id <$> parseInteger i
 
 instance ToJSON Transaction where
   toJSON (Transaction tid time description cancelled positive negative) =
@@ -97,7 +104,7 @@ instance ToJSON Transaction where
             T.pack "negative" .= toJSON negative]
 
 instance FromJSON Transaction where
-  -- TODO: enforce positive/negative
+  -- XXX enforce positive/negative
   parseJSON (Object o) =
     do tid <- extract o "id"
        t <- extract o "time"
