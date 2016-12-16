@@ -4,12 +4,10 @@ module Server where
 
 import Api
 import Model
-import Render
+import Render()
 import Db
 
-import Data.IORef
 import Data.String
-import Control.Applicative
 import Control.Monad
 import Servant
 import Network.Wai
@@ -17,8 +15,6 @@ import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Cors
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Network.Wai.Middleware.Static (staticPolicy, only)
-
-import qualified Data.Map.Strict as M
 
 notFound :: Handler a
 notFound = throwError err404 { errBody = fromString "Transaction not found"}
@@ -29,24 +25,18 @@ invalid = throwError err500 { errBody = fromString "Invalid transaction." }
 ok :: Handler String
 ok = return "ok"
 
-server :: Database -> Server Api
-server db = account :<|>
-            transactions :<|>
-            balances
-  where account :: Server AccountApi
-        account = balance :<|> transactionsFor
-
-        balance :: Account -> Handler Sum
+serveAccount :: Database -> Server AccountApi
+serveAccount db = balance :<|> transactionsFor
+  where balance :: Account -> Handler Sum
         balance acc = do state <- databaseState db
                          return $ balanceFor acc state
         transactionsFor :: Account -> Handler [Transaction]
         transactionsFor acc = filter (concerns acc) <$> databaseTransactions db
 
-        transactions :: Server TransactionApi
-        transactions = cancel :<|> uncancel :<|>
+serveTransactions :: Database -> Server TransactionApi
+serveTransactions db = cancel :<|> uncancel :<|>
                        getTransaction :<|> allTransactions :<|> addTransaction
-
-        setTransactionCancelled :: Bool -> Timestamp -> Handler String
+  where setTransactionCancelled :: Bool -> Timestamp -> Handler String
         setTransactionCancelled bool ts = do
           t <- getTransaction ts
           databaseUpdate db t {transactionCancelled = bool}
@@ -67,8 +57,13 @@ server db = account :<|>
         allTransactions :: Handler [Transaction]
         allTransactions = databaseTransactions db
 
-        balances :: Handler Balances
-        balances = databaseState db
+serveBalances :: Database -> Server BalancesApi
+serveBalances db = databaseState db
+
+server :: Database -> Server Api
+server db = serveAccount db :<|>
+            serveTransactions db :<|>
+            serveBalances db
 
 mycors :: Request -> Maybe CorsResourcePolicy
 -- allow Content-Type header:
