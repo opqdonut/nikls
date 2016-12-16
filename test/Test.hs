@@ -151,17 +151,31 @@ prop_Transaction_roundtrip = json_roundtrip
 
 -- Db --
 
-test_db_add_get :: H.Assertion
-test_db_add_get =
+generateNewTransaction :: IO Transaction
+generateNewTransaction = do
+  t <- generate arbitrary
+  return t { transactionId = New }
+
+test_db_basic :: H.Assertion
+test_db_basic =
   do db <- openDatabasePath ""
-     t0 <- generate arbitrary
-     let t = t0 { transactionId = New }
-     databaseAdd db t
-     [t'] <- databaseTransactions db
-     H.assertEqual "listed" t t' {transactionId = New}
-     let i = transactionId t'
-     Just t'' <- databaseGetTransaction db i
-     H.assertEqual "got" t t'' {transactionId = New}
+     t <- generateNewTransaction
+     added <- databaseAdd db t
+     H.assertEqual "added" t added {transactionId = New}
+     [listed] <- databaseTransactions db
+     H.assertEqual "listed" added listed
+     let i = transactionId added
+     got <- databaseGetTransaction db i
+     H.assertEqual "got" (Just added) got
+
+test_db_update =
+  do db <- openDatabasePath ""
+     added <- generateNewTransaction >>= databaseAdd db
+     modified0 <- generateNewTransaction
+     let modified = modified0 { transactionId = transactionId added }
+     databaseUpdate db modified
+     got <- databaseGetTransaction db (transactionId added)
+     H.assertEqual "got" (Just modified) got
 
 -- Running --
 
@@ -182,6 +196,7 @@ tests = [ testGroup "Model"
           , testProperty "Balances_roundtrip" prop_Balances_roundtrip
           , testProperty "Timestamp_roundtrip" prop_Timestamp_roundtrip ]
         , testGroup "Db"
-          [ testCase "test_db_add_get" test_db_add_get ] ]
+          [ testCase "test_db_basic" test_db_basic
+          , testCase "test_db_update" test_db_update ] ]
 
 main = defaultMain tests

@@ -10,6 +10,7 @@ import Data.Aeson (encode, decode)
 import Data.Int
 import Data.Maybe (listToMaybe)
 import Data.String
+import Control.Monad
 import Control.Monad.IO.Class
 import Database.SQLite.Simple
 import Database.SQLite.Simple.ToField
@@ -87,16 +88,21 @@ databaseState = fmap summarize . databaseTransactions
 add :: Query
 add = fromString "insert or replace into transactions (id, json) values (?, ?)"
 
-databaseAdd :: MonadIO m => Database -> Transaction -> m ()
+databaseAdd :: MonadIO m => Database -> Transaction -> m Transaction
 -- Due to IDs, add is a bit complicated. We add the object once to get
 -- the id, then add it again with the right id.
 databaseAdd conn t = liftIO $ withTransaction conn $ do
+  unless (transactionId t == New) (fail "Transaction id not New in add")
   execute conn add (noId, t)
   rowId <- lastInsertRowId conn
-  execute conn add (rowId, t {transactionId = Id rowId})
+  let final = t {transactionId = Id rowId}
+  execute conn add (rowId, final)
+  return final
 
 update :: Query
 update = fromString "update transactions set (json) = (?) where id = ?"
 
 databaseUpdate :: MonadIO m => Database -> Transaction -> m ()
-databaseUpdate conn t = liftIO $ execute conn update (t, transactionId t)
+databaseUpdate conn t = liftIO $ do
+  unless (transactionId t /= New) (fail "Transaction id is New in update")
+  execute conn update (t, transactionId t)

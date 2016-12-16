@@ -21,6 +21,7 @@ type TransactionApi
   :<|> Capture "id" Id :> "uncancel" :> Post Content String
   :<|> Capture "id" Id :> Get Content Transaction
   :<|> Get Content [Transaction]
+  -- could return the transaction here
   :<|> ReqBody Content SimpleTransaction :> Post Content String
 
 type BalancesApi = Get Content Balances
