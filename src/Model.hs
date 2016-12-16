@@ -57,7 +57,7 @@ data Transaction =
                transactionCancelled :: Bool,
                transactionPositive :: Balances,
                transactionNegative :: Balances}
-  deriving (Show, Read)
+  deriving (Show, Read, Eq)
 
 transactionBalances :: Transaction -> Balances
 transactionBalances t = mappend (transactionPositive t) (transactionNegative t)

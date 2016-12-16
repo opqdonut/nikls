@@ -43,10 +43,12 @@ test-suite test
   type:                exitcode-stdio-1.0
   main-is:             Test.hs
   ghc-options:         -Wall
-  build-depends:       QuickCheck
-                     , base >= 4.7 && < 5
+  build-depends:       base >= 4.7 && < 5
+                     , QuickCheck
+                     , HUnit
                      , test-framework
                      , test-framework-quickcheck2
+                     , test-framework-hunit
                      , nikls
                      , containers
   hs-source-dirs:      test

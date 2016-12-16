@@ -5,11 +5,14 @@ module Main where
 
 import Model
 import Render
+import Db
 
 import Data.List
+import qualified Test.HUnit as H
 import Test.QuickCheck
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
+import Test.Framework.Providers.HUnit
 
 import qualified Data.Map.Strict as M
 
@@ -105,6 +108,20 @@ prop_makeTransaction_sum = forAll genSimpleTransaction $ \st ->
      &&
      balancesTotal (transactionPositive t) == s
 
+instance Arbitrary Id where
+  arbitrary = oneof [ return New
+                    , Id <$> arbitrary ]
+
+instance Arbitrary Transaction where
+  arbitrary = do
+    i <- arbitrary
+    time <- arbitrary
+    desc <- arbitrary
+    cancelled <- arbitrary
+    pos <- arbitrary
+    neg <- arbitrary
+    return $ Transaction i time desc cancelled pos neg
+
 -- Render --
 
 json_roundtrip :: (Eq a, FromJSON a, ToJSON a) => a -> Bool
@@ -121,6 +138,19 @@ prop_Balances_roundtrip = json_roundtrip
 
 prop_Timestamp_roundtrip :: Timestamp -> Bool
 prop_Timestamp_roundtrip = json_roundtrip
+
+-- Db --
+
+test_db_add_get :: H.Assertion
+test_db_add_get =
+  do db <- openDatabasePath ""
+     t <- generate arbitrary
+     databaseAdd db t
+     [t'] <- databaseTransactions db
+     H.assertEqual "listed" t t' {transactionId = New}
+     let i = transactionId t'
+     Just t'' <- databaseGetTransaction db i
+     H.assertEqual "got" t t'' {transactionId = New}
 
 -- Running --
 
@@ -139,6 +169,8 @@ tests = [ testGroup "Model"
           [ testProperty "Sum_roundtrip" prop_Sum_roundtrip
           , testProperty "Account_roundtrip" prop_Account_roundtrip
           , testProperty "Balances_roundtrip" prop_Balances_roundtrip
-          , testProperty "Timestamp_roundtrip" prop_Timestamp_roundtrip ] ]
+          , testProperty "Timestamp_roundtrip" prop_Timestamp_roundtrip ]
+        , testGroup "Db"
+          [ testCase "test_db_add_get" test_db_add_get ] ]
 
 main = defaultMain tests

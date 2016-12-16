@@ -59,8 +59,11 @@ setVersion conn ver = do
 type Database = Connection
 
 openDatabase :: MonadIO m => m Database
-openDatabase = liftIO $ do
-  conn <- open dbPath
+openDatabase = openDatabasePath dbPath
+
+openDatabasePath :: MonadIO m => String -> m Database
+openDatabasePath path = liftIO $ do
+  conn <- open path
   version <- liftIO $ getVersion conn
   liftIO $ migrate version conn
   return conn
