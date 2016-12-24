@@ -165,6 +165,8 @@ function serializeBalances(obj) {
 function add() {
     var cents = Math.round(document.getElementById("sum").value*100);
     var description = document.getElementById("description").value;
+    // XXX normalize name capitalization
+    // XXX support multiple payers
     var payer = document.getElementById("payer").value;
     var shared = document.getElementById("shared").value.split(" ");
     var time = document.getElementById("time").value;
