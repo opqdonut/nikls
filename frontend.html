@@ -166,8 +166,7 @@ function add() {
     var cents = Math.round(document.getElementById("sum").value*100);
     var description = document.getElementById("description").value;
     // XXX normalize name capitalization
-    // XXX support multiple payers
-    var payer = document.getElementById("payer").value;
+    var payers = document.getElementById("payer").value.split(" ");
     var shared = document.getElementById("shared").value.split(" ");
     var time = document.getElementById("time").value;
     if (time != "") {
@@ -181,14 +180,14 @@ function add() {
     }
     console.log("time", time);
 
-    if (!verifyAccounts(shared.concat([payer]))) {
+    if (!verifyAccounts(shared.concat(payers))) {
 	return false;
     }
 
     var transaction = {time: time,
                        description: description,
                        sum: cents,
-                       payers: [payer],
+                       payers: payers,
                        shared_by: shared}
 
     console.log("transaction", transaction);
@@ -238,7 +237,7 @@ update()
                placeholder="0.00" required />
       </div>
       <div class="col-sm-2">
-	<label for="payer" class="control-label">Payer</label>
+	<label for="payer" class="control-label">Payer(s)</label>
 	<input class="form-control" type="text" id="payer"
                placeholder="name" required />
       </div>
