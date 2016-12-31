@@ -23,6 +23,7 @@ type TransactionApi
   :<|> Get Content [Transaction]
   -- could return the transaction here
   :<|> ReqBody Content SimpleTransaction :> Post Content String
+  -- XXX support editing transactions, for e.g. one day?
 
 type BalancesApi = Get Content Balances
 
