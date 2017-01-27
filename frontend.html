@@ -27,8 +27,14 @@ function space() {
 
 function formatBalance(b) {
     var el = document.createElement("button");
-    el.className = b.balance >= 0 ? "btn-success" : "btn-danger";
-    el.className += " btn";
+
+    el.className = "btn";
+    if (b.balance < 0) {
+        el.className += " btn-danger";
+    } else if (b.balance > 0 ) {
+        el.className += " btn-success";
+    }
+
     el.onclick = function() { narrow(b.account) };
     var amount = b.balance/100.0;
     el.textContent = b.account + " " + (amount>0 ? "+" : "") + amount;
