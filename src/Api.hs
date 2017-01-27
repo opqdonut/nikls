@@ -20,7 +20,7 @@ type TransactionApi
   =    Capture "id" Id :> "cancel" :> Post Content String
   :<|> Capture "id" Id :> "uncancel" :> Post Content String
   :<|> Capture "id" Id :> Get Content Transaction
-  :<|> Get Content [Transaction]
+  :<|> QueryFlag "all" :> Get Content [Transaction]
   -- could return the transaction here
   :<|> ReqBody Content SimpleTransaction :> Post Content String
   -- XXX support editing transactions, for e.g. one day?

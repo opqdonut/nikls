@@ -103,6 +103,8 @@ function update() {
     var source;
     if (user == '') {
         source = backend+'transaction';
+    } else if (user == 'all') {
+        source = backend+'transaction?all';
     } else {
         source = backend+'account/'+user+'/transactions';
     }

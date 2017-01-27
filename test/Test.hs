@@ -178,7 +178,7 @@ test_db_basic =
      t <- generateNewTransaction
      added <- databaseAdd db t
      H.assertEqual "added" t added {transactionId = New}
-     [listed] <- databaseTransactions db
+     [listed] <- databaseAllTransactions db
      H.assertEqual "listed" added listed
      let i = transactionId added
      got <- databaseGetTransaction db i

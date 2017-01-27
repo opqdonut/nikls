@@ -73,9 +73,13 @@ openDatabasePath path = liftIO $ do
 getAll :: Query
 getAll = fromString "select json from transactions"
 
-databaseTransactions :: MonadIO m => Database -> m [Transaction]
 -- XXX could index the time for ordering
+databaseTransactions :: MonadIO m => Database -> m [Transaction]
 databaseTransactions conn =
+  filter (not.transactionCancelled) <$> databaseAllTransactions conn
+
+databaseAllTransactions :: MonadIO m => Database -> m [Transaction]
+databaseAllTransactions conn =
   sortOn transactionTime . map fromOnly <$> liftIO (query_ conn getAll)
 
 get :: Query

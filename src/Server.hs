@@ -55,8 +55,9 @@ serveTransactions db = cancel :<|> uncancel :<|>
           unless (transactionValid t) invalid
           _ <- databaseAdd db t
           ok
-        allTransactions :: Handler [Transaction]
-        allTransactions = databaseTransactions db
+        allTransactions :: Bool -> Handler [Transaction]
+        allTransactions False = databaseTransactions db
+        allTransactions True = databaseAllTransactions db
 
 serveBalances :: Database -> Server BalancesApi
 serveBalances db = databaseState db
