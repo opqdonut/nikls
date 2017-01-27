@@ -129,6 +129,7 @@ function update() {
         ts.reverse();
         ts.forEach(function(t) {
             var li = document.createElement("li");
+            li.className = "list-group-item";
             li.appendChild(formatTransaction(t));
             ul.appendChild(li);
         });
@@ -269,7 +270,7 @@ update()
   <p id="balances"></p>
 
   <h3 id="transactions-title">Transactions</h3>
-  <ul id="transactions"></ul>
+  <ul id="transactions" class="list-group"></ul>
 </div>
 </body>
 </html>
