@@ -57,10 +57,14 @@ function formatTime(t) {
         }
         return ""+n;
     }
-    var d = new Date(t);
-    var str = d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) +
+    var d;
+    if (typeof t === "undefined") {
+        d = new Date();
+    } else {
+        d = new Date(t);
+    }
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) +
         " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
-    return document.createTextNode(str);
 }
 
 function transactionAction(t, action) {
@@ -84,7 +88,7 @@ function cancelLink(t) {
 
 function formatTransaction(t) {
     var el = document.createElement(t.cancelled ? "s" : "span");
-    el.appendChild(formatTime(t.time))
+    el.appendChild(document.createTextNode(formatTime(t.time)))
     el.appendChild(space());
     var balances = t.positive.concat(t.negative);
     balances.sort(function(a, b) { return b.balance - a.balance; });
@@ -105,6 +109,9 @@ function narrow(user) {
 }
 
 function update() {
+    // XXX where should this go?
+    document.getElementById("time").defaultValue = formatTime();
+
     var user = window.location.hash.substr(1);
     var source;
     if (user == '') {
@@ -223,7 +230,7 @@ function add() {
     return false;
 }
 
-update()
+window.onload = update;
 
 </script>
 
@@ -258,7 +265,6 @@ update()
       </div>
       <div class="col-sm-2">
         <label for="time" class="control-label">Time</label>
-        <!-- XXX fill with current date? -->
         <input class="form-control" id="time"
                placeholder="YYYY-MM-DD HH:MM" />
       </div>
