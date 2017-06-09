@@ -169,7 +169,7 @@ function verifyAccounts(accounts) {
     if (unknown.length === 0) {
         return true;
     }
-    return confirm("Unknown users: "+unknown+"\n"+
+    return confirm("Unknown users:\n"+unknown.join("\n")+"\n"+
                    "Do you want to create them?");
 }
 
@@ -179,12 +179,17 @@ function serializeBalances(obj) {
                 balance: obj[k]}});
 }
 
+function nameList(str) {
+    return str.split(/ *,? +/)
+        .map(function(s) {return s.toLowerCase();})
+        .filter(function(s) {return s !== ""});
+}
+
 function add() {
     var cents = Math.round(document.getElementById("sum").value*100);
     var description = document.getElementById("description").value;
-    // XXX normalize name capitalization
-    var payers = document.getElementById("payer").value.split(" ");
-    var shared = document.getElementById("shared").value.split(" ");
+    var payers = nameList(document.getElementById("payer").value);
+    var shared = nameList(document.getElementById("shared").value);
     var time = document.getElementById("time").value;
     if (time != "") {
         time = Date.parse(time);
