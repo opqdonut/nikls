@@ -17,7 +17,7 @@ inverse (Sum s) = Sum (negate s)
 newtype Account = Account { accountName :: String }
                 deriving (Show, Read, Eq, Ord)
 
-newtype Balances = Balances { unBalances :: (M.Map Account Sum) }
+newtype Balances = Balances { unBalances :: M.Map Account Sum }
                  deriving (Show, Read, Eq)
 
 instance Monoid Balances where

@@ -83,5 +83,5 @@ main =
      print port
 
      let settings =
-           setPort port $ setHost (fromString "127.0.0.1") $ defaultSettings
+           setPort port $ setHost (fromString "127.0.0.1") defaultSettings
      runSettings settings (app db)
