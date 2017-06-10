@@ -213,7 +213,7 @@ tests = [ testGroup "Model"
           , testProperty "Timestamp_roundtrip" prop_Timestamp_roundtrip
           , testProperty "Transaction_roundtrip" prop_Transaction_roundtrip
           , testProperty "Sum_integer" prop_Sum_integer
-          , testProperty "timestamp_integer" prop_Timestamp_integer
+          , testProperty "Timestamp_integer" prop_Timestamp_integer
           , testProperty "Id_integer" prop_Id_integer ]
         , testGroup "Db"
           [ testCase "test_db_basic" test_db_basic

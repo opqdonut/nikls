@@ -34,26 +34,13 @@ instance FromHttpApiData Id where
 extract :: FromJSON a => Object -> String -> Parser a
 extract o f = o .: T.pack f >>= parseJSON
 
--- XXX they have something like this in aeson 1.0 but we're on 0.1
-parseInteger :: (Integral a, Bounded a) => Value -> Parser a
-parseInteger (Number n)
-  | n < minBack = fail "Too small"
-  | n > maxBack = fail "Too big"
-  | back /= n = fail "Not representable"
-  | otherwise = return result
-  where result = round n
-        back = fromIntegral result
-        minBack = fromIntegral (minBound `asTypeOf` result)
-        maxBack = fromIntegral (maxBound `asTypeOf` result)
-parseInteger _          = mzero
-
 -- XXX implement ToJSON.toEncoding for better performance
 
 instance ToJSON Sum where
   toJSON (Sum b) = Number (fromIntegral b)
 
 instance FromJSON Sum where
-  parseJSON s = Sum <$> parseInteger s
+  parseJSON s = Sum <$> parseJSON s
 
 instance ToJSON Account where
   toJSON (Account n) = String (T.pack n)
@@ -84,7 +71,7 @@ instance ToJSON Timestamp where
   toJSON (Timestamp t) = Number (fromIntegral t)
 
 instance FromJSON Timestamp where
-  parseJSON t = Timestamp <$> parseInteger t
+  parseJSON t = Timestamp <$> parseJSON t
 
 instance ToJSON Id where
   toJSON New = toJSON "New"
@@ -92,7 +79,7 @@ instance ToJSON Id where
 
 instance FromJSON Id where
   parseJSON (String s)   = if s == T.pack "New" then return New else mzero
-  parseJSON i            = Id <$> parseInteger i
+  parseJSON i            = Id <$> parseJSON i
 
 instance ToJSON Transaction where
   toJSON (Transaction tid time description cancelled positive negative) =
