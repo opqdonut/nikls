@@ -7,7 +7,6 @@
       integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
       crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/2.0.1/fetch.min.js"></script>
-<script src="https://raw.githubusercontent.com/csnover/js-iso8601/master/iso8601.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nikls is kinda like scred</title>
 
@@ -21,6 +20,20 @@ var sendJson = new Headers({"Content-Type": "application/json"});
 var getOpts = {method: "GET", headers: acceptJson, credentials: "same-origin"};
 
 var accountNames = [];
+
+// In ECMAScript 5, date-time strings without timezone are interpreted as UTC.
+// In ECMAScript 6, they're interpreted as local.
+var timezoneOffset;
+if (Date.parse('1970-01-01T00:00') === 0) {
+    timezoneOffset = (new Date()).getTimezoneOffset() * 60 * 1000;
+} else {
+    timezoneOffset = 0;
+}
+
+function parseTime(time) {
+    time = time.trim().replace(' ', 'T');
+    return Date.parse(time) + timezoneOffset;
+}
 
 function space() {
     return document.createTextNode(" ");
@@ -193,7 +206,7 @@ function add() {
     var shared = nameList(document.getElementById("shared").value);
     var time = document.getElementById("time").value;
     if (time != "") {
-        time = Date.parse(time);
+        time = parseTime(time);
         if (isNaN(time)) {
             alert("Invalid time");
             return false;
