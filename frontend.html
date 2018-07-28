@@ -21,6 +21,20 @@ var getOpts = {method: "GET", headers: acceptJson, credentials: "same-origin"};
 
 var accountNames = [];
 
+// In ECMAScript 5, date-time strings without timezone are interpreted as UTC.
+// In ECMAScript 6, they're interpreted as local.
+var timezoneOffset;
+if (Date.parse('1970-01-01T00:00') === 0) {
+    timezoneOffset = (new Date()).getTimezoneOffset() * 60 * 1000;
+} else {
+    timezoneOffset = 0;
+}
+
+function parseTime(time) {
+    time = time.trim().replace(' ', 'T');
+    return Date.parse(time) + timezoneOffset;
+}
+
 function space() {
     return document.createTextNode(" ");
 }
@@ -192,7 +206,7 @@ function add() {
     var shared = nameList(document.getElementById("shared").value);
     var time = document.getElementById("time").value;
     if (time != "") {
-        time = Date.parse(time);
+        time = parseTime(time);
         if (isNaN(time)) {
             alert("Invalid time");
             return false;
