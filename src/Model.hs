@@ -48,7 +48,7 @@ data Id = New | Id Int64
 -- A transaction has separate positive and negative balances so that
 -- we can properly represent a situation where A pays 15 and the
 -- benefit is split among A, B and C. Without separate positive and
--- negative this would show up as A+10 B-5 C-5 and the original sum
+-- negative this would show up as A-10 B+5 C+5 and the original sum
 -- would be lost.
 data Transaction =
   Transaction {transactionId :: Id,
