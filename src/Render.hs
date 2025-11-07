@@ -20,6 +20,7 @@ import Data.Aeson (ToJSON(..), FromJSON(..),
                    encode, eitherDecode)
 import Data.Aeson.Types (Parser)
 import qualified Data.Map.Strict as M
+import Data.String
 
 -- parsing url fragments
 
@@ -32,7 +33,7 @@ instance FromHttpApiData Id where
 -- parsing & rendering json
 
 extract :: FromJSON a => Object -> String -> Parser a
-extract o f = o .: T.pack f >>= parseJSON
+extract o f = o .: fromString f >>= parseJSON
 
 -- XXX implement ToJSON.toEncoding for better performance
 
@@ -51,8 +52,8 @@ instance FromJSON Account where
 
 instance ToJSON Balances where
   toJSON (Balances bal) = toJSON pairs
-    where pairs = [object [T.pack "account" .= toJSON a,
-                           T.pack "balance" .= toJSON b]
+    where pairs = [object [fromString "account" .= toJSON a,
+                           fromString "balance" .= toJSON b]
                   | (a,b) <- M.assocs bal]
 
 instance FromJSON Balances where
@@ -83,12 +84,12 @@ instance FromJSON Id where
 
 instance ToJSON Transaction where
   toJSON (Transaction tid time description cancelled positive negative) =
-    object [T.pack "id" .= toJSON tid,
-            T.pack "time" .= toJSON time,
-            T.pack "description" .= toJSON description,
-            T.pack "cancelled" .= toJSON cancelled,
-            T.pack "positive" .= toJSON positive,
-            T.pack "negative" .= toJSON negative]
+    object [fromString "id" .= toJSON tid,
+            fromString "time" .= toJSON time,
+            fromString "description" .= toJSON description,
+            fromString "cancelled" .= toJSON cancelled,
+            fromString "positive" .= toJSON positive,
+            fromString "negative" .= toJSON negative]
 
 instance FromJSON Transaction where
   -- XXX enforce positive/negative
