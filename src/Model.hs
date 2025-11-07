@@ -11,6 +11,9 @@ instance Monoid Sum where
   mempty = Sum 0
   mappend (Sum a) (Sum b) = Sum (a+b)
 
+instance Semigroup Sum where
+  (<>) = mappend
+
 inverse :: Sum -> Sum
 inverse (Sum s) = Sum (negate s)
 
@@ -23,6 +26,9 @@ newtype Balances = Balances { unBalances :: M.Map Account Sum }
 instance Monoid Balances where
   mempty = Balances M.empty
   mappend (Balances a) (Balances b) = Balances $ M.unionWith mappend a b
+
+instance Semigroup Balances where
+  (<>) = mappend
 
 balancesTotal :: Balances -> Sum
 balancesTotal (Balances b) = mconcat $ M.elems b
